@@ -60,7 +60,7 @@ CREATE TABLE user (
     CREATE TABLE product (
         id int(11) NOT NULL PRIMARY KEY AUTO_INCREMENT,
         category_id int(11) NOT NULL,
-        barcode varchar(50) NOT NULL UNIQUE
+        barcode varchar(255) NOT NULL UNIQUE
         name varchar(120) NOT NULL,
         brand varchar(120) NOT NULL,
         description text DEFAULT NULL,
