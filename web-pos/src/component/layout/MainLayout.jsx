@@ -181,7 +181,7 @@ const items = [
 
 ];
 const MainLayout = () => {
-  const {setConfig} = configStore;
+  const {setConfig} = configStore();
   const profile = getProfile();
   const [collapsed, setCollapsed] = useState(false);
   const {

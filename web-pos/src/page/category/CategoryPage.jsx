@@ -4,9 +4,11 @@ import { Space, Table, Tag ,Modal,Input, Select, message, List,Form} from "antd"
 import { MdAdd, MdDelete , MdEdit } from "react-icons/md";
 import { Button } from 'antd';
 import MainPage from "../../component/layout/Mainpage";
+import { configStore } from "../../store/configStore";
 
 
 function CategoryPage() {
+  const {config} = configStore
   const [List, setList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [formRef] = Form.useForm();
