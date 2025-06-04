@@ -17,6 +17,7 @@ import MainLayoutAuth from "./component/layout/MainLayoutAuth";
 import UserPage from "./page/user/UserPage";
 import RolePage from "./page/role/RolePage";
 import SupplierPage from "./page/purchase/SupplierPage";
+import ProductPage from "./page/product/productPage";
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
       <Route path="/employee" element={<EmployeePage/>}/>
       <Route path="/costomer" element={<CostomerPage/>}/>
       <Route path="/category" element={<CategoryPage/>}/>
+      <Route path="/product" element={<ProductPage/>}/>
       <Route path="/user" element={<UserPage/>}/>
       <Route path="/role" element={<RolePage/>}/>
       <Route path="/supplier" element={<SupplierPage/>}/>
