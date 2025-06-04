@@ -1,0 +1,3 @@
+create new db : pos
+
+categoey

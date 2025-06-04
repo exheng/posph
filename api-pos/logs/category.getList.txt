@@ -1,0 +1,124 @@
+Error
+Error: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near 'BY' at line 1
+Error: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near 'BY' at line 1
+Error: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near 'BY' at line 1
+Error: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near 'BY Id DESC' at line 1
+Error: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near 'BY Id DESC' at line 1
+Error: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near 'BY Id DESC' at line 1
+Error: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near 'BY Id DESC' at line 1
+Error: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near 'BY Id DESC' at line 1
+Error: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near 'BY Id DESC' at line 1
+Error: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near 'BY Id DESC' at line 1
+Error: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near 'BY Id DESC' at line 1
+Error: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near 'BY Id DESC' at line 1
+Error: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near 'BY Id DESC' at line 1
+Error: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near 'BY Id DESC' at line 1
+Error: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near 'BY Id DESC' at line 1
+Error: read ECONNRESET
+Error
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error
+Error
+Error
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+ReferenceError: List is not defined
+ReferenceError: List is not defined
+Error
+Error
+Error
+Error
+Error
+Error
+Error: Table 'pos.categoryd' doesn't exist
+Error: Table 'pos.categoryd' doesn't exist
+Error: Table 'pos.categoryd' doesn't exist
+Error: Table 'pos.categoryd' doesn't exist
+Error: Table 'pos.categoryf' doesn't exist
+Error: Table 'pos.categoryf' doesn't exist
+Error: Table 'pos.categorya' doesn't exist
+Error: Table 'pos.categorya' doesn't exist
+Error
+Error
+Error
+Error
+Error
+Error
+Error
+Error
+Error
+Error
+Error
+Error
+Error
+Error

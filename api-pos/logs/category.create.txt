@@ -1,0 +1,15 @@
+TypeError: Cannot read properties of undefined (reading 'query')
+TypeError: Cannot read properties of undefined (reading 'query')
+TypeError: Cannot read properties of undefined (reading 'query')
+Error: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near 'FROMss category' at line 1
+Error: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '.....' at line 1
+Error: Column 'Name' cannot be null
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT
+Error: connect ETIMEDOUT

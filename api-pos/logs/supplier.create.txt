@@ -1,0 +1,31 @@
+Error: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '' at line 1
+Error: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '' at line 1
+Error: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '' at line 1
+Error: Column 'name' cannot be null
+Error: Column 'name' cannot be null
+Error: Column 'name' cannot be null
+Error: Column 'name' cannot be null
+Error: Column 'name' cannot be null
+Error: Column 'name' cannot be null
+Error: Column 'name' cannot be null
+Error: Column 'name' cannot be null
+Error: Column 'name' cannot be null
+Error: Column 'name' cannot be null
+Error: Column 'name' cannot be null
+Error: Duplicate entry '012345678' for key 'tel'
+Error: Duplicate entry '012345678' for key 'tel'
+Error: Duplicate entry '012345678' for key 'tel'
+Error: Duplicate entry '012345678' for key 'tel'
+Error: Duplicate entry '012345678' for key 'tel'
+Error: Duplicate entry '012345678' for key 'tel'
+Error: Duplicate entry '012345678' for key 'tel'
+Error: Duplicate entry '012345678' for key 'tel'
+Error: Duplicate entry '012345678' for key 'tel'
+Error: Duplicate entry '012345678' for key 'tel'
+Error: Duplicate entry '012345678' for key 'tel'
+Error: Duplicate entry '012345678' for key 'tel'
+Error: Duplicate entry 'vn-102' for key 'code'
+Error: Duplicate entry 'vn-102' for key 'code'
+Error: Duplicate entry 'vn-102' for key 'code'
+Error: Duplicate entry '061734232' for key 'tel'
+Error: Duplicate entry '061734232' for key 'tel'

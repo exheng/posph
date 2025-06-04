@@ -1,0 +1,11 @@
+>npm init
+>npm install express
+ 
+
+ create index.js // root project
+
+ > npm install core
+ > npm install mysql2
+ > npm install --save-dev nodemon
+ > npm i bcrypt
+ 
