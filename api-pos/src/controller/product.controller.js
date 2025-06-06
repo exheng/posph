@@ -16,13 +16,6 @@ exports.getList = async (req,res) => {
 
 exports.create =  async (req,res) => { 
     try{
-        // var sql = "INSERT INTO category (Name, Description, Status, ParentId) VALUES (:Name, :Description, :Status, :ParentId)";
-        // var [data] = await db.query(sql, {
-        //     Name: req.body.Name,
-        //     Description: req.body.Description,
-        //     Status: req.body.Status,
-        //     ParentId: req.body.ParentId,
-        // });
         res.json({
         body:req.body, 
         file : req.file,
@@ -67,3 +60,16 @@ exports.remove = async (req,res) => {
         logError("remove.create", error,res);
     }
 };
+
+exports.newBarcode = async (req,res) => {
+   try{
+        var sql = "SELECT CONCAT('P', LPAD((SELECT COALESCE(MAX(id), 0) + 1 FROM product), 3, '0')) AS barcode";
+        var [data] = await db.query(sql);
+        res.json({
+        barcode: data[0].barcode, 
+        message : "Data Delete Success!"
+    }); 
+    }catch(error){
+        logError("remove.create", error,res);
+    }
+}; 

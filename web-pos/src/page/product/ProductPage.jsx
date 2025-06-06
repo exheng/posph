@@ -48,17 +48,21 @@ function ProductPage() {
 
         //  params.append("upload_image",items.image_default);
         if (items.image_default?.file?.originFileObj) {
-            params.append("upload_image", items.image_default.file.originFileObj);
+            params.append("upload_image", items.image_default.file.originFileObj, items.image_default.file.name);
         }
 
          const res = await request("product", "post", params);
          console.log(res);
     };
-    const onNewBtn = () => {
-        setState((p)=>({
-            ...p,
-            visibleModal:true,
-        }))
+    const onNewBtn = async () => {
+        const res = await request ("new_barcode","post")
+        if (res && !res.error){
+            form.setFieldValue("barcode", res.barcode)
+            setState((p)=>({
+                ...p,
+                visibleModal:true,
+            }))
+        }
     };
 
   const handlePreview = async (file) => {
@@ -143,6 +147,9 @@ function ProductPage() {
                                 }))}
                             />
 
+                        </Form.Item>
+                        <Form.Item name="barcode" label="Barcode"> 
+                            <Input disabled placeholder="Barcode" style={{width:"100%"}}/>
                         </Form.Item>
                         <Form.Item name="qty" label="Quantity"> 
                             <InputNumber placeholder="Input Quantity" style={{width:"100%"}}/>
