@@ -1,8 +1,11 @@
+const path = require("path");
+
 module.exports = {
    config : {
     app_name : "POS PH",
     app_version : "1.0",
-    image_path : "",
+    img_path : path.join("C:/xampp/htdocs/pos_img"),
+
     db : {
         HOST:"localhost",
         USER:"root",

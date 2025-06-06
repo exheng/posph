@@ -190,14 +190,14 @@ const MainLayout = () => {
   useEffect(()=>{
     getConfig();
     if (!profile){
-    Navigate("/login");
+    navigate("/login");
   }
-  },[profile])
+  },[])
  
 
-  const Navigate = useNavigate();
+  const navigate = useNavigate();
   const onClickMenu = (item) => {
-    Navigate(item.key);
+    navigate(item.key);
   };
 
   const getConfig = async () => {
@@ -205,12 +205,12 @@ const MainLayout = () => {
     if (res){
       setConfig(res);
     }
-  }
+  };
 
   const onLogOut = () =>{
     setProfile();
     setAccessToken();
-    Navigate("/login");
+    navigate("/login");
   }
   
   if (!profile){
