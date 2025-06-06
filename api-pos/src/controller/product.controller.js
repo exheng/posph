@@ -14,29 +14,52 @@ exports.getList = async (req,res) => {
     } 
 };
 
-exports.create =  async (req,res) => { 
-    try{
-        res.json({
-        body:req.body, 
-        file : req.file,
-        message:"Insert Success !",
-    }); 
-    }catch(error){
-        logError("product.create", error,res);
-    }
-   
+exports.create = async (req, res) => {
+  try {
+    if (isExistBarcode(req.barcode)){
+            res.json({
+                error : {
+                    barcode : "Barcode is already exist!"
+                }
+            });
+            return false;
+        }
+    // SQL INSERT with named parameters
+    const sql = "INSERT INTO product (category_id, barcode, name, brand, description, qty, price, discount, status, create_by, image) VALUES (:category_id, :barcode, :name, :brand, :description, :qty, :price, :discount, :status, :create_by, :image)";
+
+    const [data] = await db.query(sql, {
+      ...req.body,
+      image: req.file?.filename,
+      create_by : req.auth?.name,
+    });
+
+    res.json({
+      data,
+      message: "Insert Success!",
+    });
+  } catch (error) {
+    logError("product.create", error, res);
+  }
 };
+
 
 exports.update = async (req,res) => {
     try{
-        
-        var [data] = await db.query("UPDATE category SET Name=:Name, Description=:Description, Status=:Status, ParentId=:ParentId WHERE Id = :Id", {
-            Id: req.body.Id,
-            Name: req.body.Name,
-            Description: req.body.Description,
-            Status: req.body.Status,
-            ParentId: req.body.ParentId,
-        });
+        if (isExistBarcode(req.barcode)){
+            res.json({
+                error : {
+                    barcode : "Barcode is already exist!"
+                }
+            });
+            return false;
+        }
+        // var [data] = await db.query("UPDATE category SET Name=:Name, Description=:Description, Status=:Status, ParentId=:ParentId WHERE Id = :Id", {
+        //     Id: req.body.Id,
+        //     Name: req.body.Name,
+        //     Description: req.body.Description,
+        //     Status: req.body.Status,
+        //     ParentId: req.body.ParentId,
+        // });
         res.json({
         data: data, 
         message : "Data Update Success!"
@@ -69,6 +92,21 @@ exports.newBarcode = async (req,res) => {
         barcode: data[0].barcode, 
         message : "Data Delete Success!"
     }); 
+    }catch(error){
+        logError("remove.create", error,res);
+    }
+}; 
+
+isExistBarcode = async (barcode) => {
+   try{
+        var sql = "SELECT COUNT(id) AS Total FROM product WHERE barcode=:barcode";
+        var [data] = await db.query(sql,{
+            barcode:barcode,
+        });
+        if (data.length > 0 && data[0].Total > 0 ) {
+            return true;
+        }
+        return false;
     }catch(error){
         logError("remove.create", error,res);
     }

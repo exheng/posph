@@ -40,19 +40,29 @@ function ProductPage() {
             ...p,
             visibleModal:false,
         }))
+        form.resetFields();
     };
     const onFinish = async (items) => {
-        // console.log(items);
          var params = new FormData();
          params.append("name",items.name);
-
-        //  params.append("upload_image",items.image_default);
+         params.append("category_id",items.category_id);
+         params.append("barcode",items.barcode);
+         params.append("brand",items.brand);
+         params.append("description",items.description);
+         params.append("qty",items.qty);
+         params.append("price",items.price);
+         params.append("discount",items.discount);
+         params.append("status",items.status);
         if (items.image_default?.file?.originFileObj) {
             params.append("upload_image", items.image_default.file.originFileObj, items.image_default.file.name);
         }
-
          const res = await request("product", "post", params);
-         console.log(res);
+         if (res && !res.error){
+            oncloseModal();
+         }
+         else{
+            res.error?.barcode && message.error(res.error?.barcode)
+         }
     };
     const onNewBtn = async () => {
         const res = await request ("new_barcode","post")
@@ -177,7 +187,7 @@ function ProductPage() {
                         <Form.Item name="price" label="Price"> 
                             <InputNumber placeholder="Input Price" style={{width:"100%"}}/>
                         </Form.Item>
-                        <Form.Item name="Status" label="Status" > 
+                        <Form.Item name="status" label="Status" > 
                             <Select 
                                 placeholder="Select Status"
                                 options={[
