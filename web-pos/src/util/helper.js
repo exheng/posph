@@ -5,11 +5,16 @@ import { getAccessToken } from "../store/profile.store";
 
  export const request = (url ="", method ="get",data ={}) =>{
     var access_token = getAccessToken();
+    var headers = { "Content-Type": "application/json"};
+    if (data instanceof FormData) {
+      headers = {"Content-Type": "multipart/form-data"}
+    }
     return axios({ 
         url : Config.base_url + url,
         method : method,
         data : data,
         headers: {
+          ...headers,
           Authorization: `Bearer ${access_token}`,
         },
 
