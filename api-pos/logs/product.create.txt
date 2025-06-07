@@ -1,0 +1,29 @@
+TypeError: Cannot read properties of undefined (reading 'id')
+TypeError: Cannot read properties of undefined (reading 'id')
+TypeError: Cannot read properties of undefined (reading 'id')
+TypeError: Cannot read properties of undefined (reading 'id')
+TypeError: Cannot read properties of undefined (reading 'Id')
+TypeError: Cannot read properties of undefined (reading 'Id')
+TypeError: Cannot read properties of undefined (reading 'current_id')
+TypeError: Cannot read properties of undefined (reading 'current_id')
+TypeError: Cannot read properties of undefined (reading 'current_id')
+TypeError: Cannot read properties of undefined (reading 'current_id')
+Error: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near ';status, ;create_by)' at line 1
+Error: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near ';status, ;create_by)' at line 1
+Error: Cannot add or update a child row: a foreign key constraint fails (`pos`.`product`, CONSTRAINT `product_ibfk_1` FOREIGN KEY (`category_id`) REFERENCES `category` (`Id`))
+Error: Cannot add or update a child row: a foreign key constraint fails (`pos`.`product`, CONSTRAINT `product_ibfk_1` FOREIGN KEY (`category_id`) REFERENCES `category` (`Id`))
+Error: Duplicate entry 'P001' for key 'barcode'
+Error: Cannot add or update a child row: a foreign key constraint fails (`pos`.`product`, CONSTRAINT `product_ibfk_1` FOREIGN KEY (`category_id`) REFERENCES `category` (`Id`))
+Error: Cannot add or update a child row: a foreign key constraint fails (`pos`.`product`, CONSTRAINT `product_ibfk_1` FOREIGN KEY (`category_id`) REFERENCES `category` (`Id`))
+Error: Cannot add or update a child row: a foreign key constraint fails (`pos`.`product`, CONSTRAINT `product_ibfk_1` FOREIGN KEY (`category_id`) REFERENCES `category` (`Id`))
+Error: Cannot add or update a child row: a foreign key constraint fails (`pos`.`product`, CONSTRAINT `product_ibfk_1` FOREIGN KEY (`category_id`) REFERENCES `category` (`Id`))
+Error: Cannot add or update a child row: a foreign key constraint fails (`pos`.`product`, CONSTRAINT `product_ibfk_1` FOREIGN KEY (`category_id`) REFERENCES `category` (`Id`))
+Error: Cannot add or update a child row: a foreign key constraint fails (`pos`.`product`, CONSTRAINT `product_ibfk_1` FOREIGN KEY (`category_id`) REFERENCES `category` (`Id`))
+Error: Cannot add or update a child row: a foreign key constraint fails (`pos`.`product`, CONSTRAINT `product_ibfk_1` FOREIGN KEY (`category_id`) REFERENCES `category` (`Id`))
+Error: Unknown column 'product_id' in 'field list'
+Error: Unknown column 'product_id' in 'field list'
+Error: Unknown column 'product_id' in 'field list'
+Error: Unknown column 'product_id' in 'field list'
+Error: Cannot add or update a child row: a foreign key constraint fails (`pos`.`product`, CONSTRAINT `product_ibfk_1` FOREIGN KEY (`category_id`) REFERENCES `category` (`Id`))
+Error: Cannot add or update a child row: a foreign key constraint fails (`pos`.`product`, CONSTRAINT `product_ibfk_1` FOREIGN KEY (`category_id`) REFERENCES `category` (`Id`))
+Error: Cannot add or update a child row: a foreign key constraint fails (`pos`.`product`, CONSTRAINT `product_ibfk_1` FOREIGN KEY (`category_id`) REFERENCES `category` (`Id`))

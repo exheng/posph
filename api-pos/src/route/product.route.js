@@ -11,8 +11,8 @@ const { uploadFile } = require ("../util/helper")
 
 module.exports = (app) => {
    app.get("/api/product",validate_token(), getList); 
-   app.post("/api/product",uploadFile.single("upload_image"),create); 
+   app.post("/api/product",validate_token(),uploadFile.single("upload_image"),create); 
    app.put("/api/product",validate_token(),update); 
    app.delete("/api/product",validate_token(),remove); 
-   app.post("/api/new_barcode",validate_token(),newBarcode); 
+   app.post("/api/new_barcode", validate_token(), newBarcode);
 };
