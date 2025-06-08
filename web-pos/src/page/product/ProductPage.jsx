@@ -25,7 +25,8 @@ import {
   MdDelete, 
   MdEdit,
   MdSearch,
-  MdFilterList
+  MdFilterList,
+  MdClear
 } from "react-icons/md";
 import MainPage from "../../component/layout/Mainpage";
 import { configStore } from "../../store/configStore";
@@ -54,7 +55,6 @@ function ProductPage() {
         selectedCategory: null,
         selectedBrand: null,
         products: [],
-        filteredProducts: [],
         loading: false
     });
 
@@ -63,50 +63,61 @@ function ProductPage() {
     const [imageDefault, setImageDefault] = useState([]);
     const [imageOptional, setImageOptional] = useState([]);
 
+    // Add debounce function
+    const debounce = (func, wait) => {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    };
+
     useEffect(() => {
         getProducts();
     }, []);
 
+    // Add effect for auto-filtering
     useEffect(() => {
-        filterProducts();
-    }, [state.txtSearch, state.selectedCategory, state.selectedBrand, state.products]);
-
-    const filterProducts = () => {
-        let filtered = [...state.products];
-
-        if (state.txtSearch) {
-            const searchLower = state.txtSearch.toLowerCase();
-            filtered = filtered.filter(item => 
-                item.name.toLowerCase().includes(searchLower) ||
-                item.barcode.toLowerCase().includes(searchLower) ||
-                item.brand.toLowerCase().includes(searchLower)
-            );
-        }
-
-        if (state.selectedCategory) {
-            filtered = filtered.filter(item => 
-                item.category_id === state.selectedCategory
-            );
-        }
-
-        if (state.selectedBrand) {
-            filtered = filtered.filter(item => 
-                item.brand === state.selectedBrand
-            );
-        }
-
-        setState(prev => ({ ...prev, filteredProducts: filtered }));
-    };
+        getProducts();
+    }, [state.txtSearch, state.selectedCategory, state.selectedBrand]);
 
     const getProducts = async () => {
         try {
             setState(prev => ({ ...prev, loading: true }));
             const res = await request("product", "get");
             if (res && !res.error) {
+                let filteredProducts = res.list || [];
+                
+                // Apply search filter
+                if (state.txtSearch) {
+                    filteredProducts = filteredProducts.filter(product => 
+                        product.name.toLowerCase().includes(state.txtSearch.toLowerCase()) ||
+                        product.barcode.toLowerCase().includes(state.txtSearch.toLowerCase()) ||
+                        product.brand.toLowerCase().includes(state.txtSearch.toLowerCase())
+                    );
+                }
+
+                // Apply category filter
+                if (state.selectedCategory) {
+                    filteredProducts = filteredProducts.filter(product => 
+                        product.category_id === state.selectedCategory
+                    );
+                }
+
+                // Apply brand filter
+                if (state.selectedBrand) {
+                    filteredProducts = filteredProducts.filter(product => 
+                        product.brand === state.selectedBrand
+                    );
+                }
+
                 setState(prev => ({ 
                     ...prev, 
-                    products: res.list || [],
-                    filteredProducts: res.list || [],
+                    products: filteredProducts,
                     loading: false 
                 }));
             }
@@ -116,16 +127,33 @@ function ProductPage() {
         }
     };
 
+    const handleSearch = debounce((value) => {
+        setState(prev => ({ ...prev, txtSearch: value }));
+    }, 300);
+
+    const handleClearFilters = () => {
+        setState(prev => ({
+            ...prev,
+            txtSearch: "",
+            selectedCategory: null,
+            selectedBrand: null
+        }));
+    };
+
     const oncloseModal = () => {
         setState((p)=>({
             ...p,
             visibleModal:false,
-        }))
+        }));
         form.resetFields();
+        setImageDefault([]);
+        setImageOptional([]);
+        setPreviewImage("");
     };
+
     const onFinish = async (items) => {
         try {
-            const params = new FormData();
+            var params = new FormData();
             params.append("id", form.getFieldValue("id")); // Add ID for update
             params.append("name", items.name);
             params.append("category_id", items.category_id);
@@ -136,7 +164,6 @@ function ProductPage() {
             params.append("price", items.price);
             params.append("discount", items.discount);
             params.append("status", items.status);
-
             if (items.image_default?.file?.originFileObj) {
                 params.append("upload_image", items.image_default.file.originFileObj, items.image_default.file.name);
             }
@@ -145,16 +172,17 @@ function ProductPage() {
             const res = await request("product", method, params);
             
             if (res && !res.error) {
-                message.success(form.getFieldValue("id") ? "Product updated successfully" : "Product created successfully");
+                message.success(res.message || "Operation successful!");
                 oncloseModal();
-                getProducts(); // Refresh the product list
+                getProducts();
             } else {
-                message.error(res.error?.barcode || "Operation failed");
+                res.error?.barcode && message.error(res.error?.barcode);
             }
         } catch (error) {
-            message.error("An error occurred during the operation");
+            message.error("An error occurred while saving the product");
         }
     };
+
     const onNewBtn = async () => {
         const res = await request ("new_barcode","post")
         if (res && !res.error){
@@ -166,16 +194,16 @@ function ProductPage() {
         }
     };
 
-  const handlePreview = async (file) => {
-    if (!file.url && !file.preview) {
-      file.preview = await getBase64(file.originFileObj);
-    }
-    setPreviewImage(file.url || (file.preview ));
-    setPreviewOpen(true);
-  };
+    const handlePreview = async (file) => {
+        if (!file.url && !file.preview) {
+            file.preview = await getBase64(file.originFileObj);
+        }
+        setPreviewImage(file.url || (file.preview ));
+        setPreviewOpen(true);
+    };
 
-  const handleChangeImageDefault= ({ fileList: newFileList }) => setImageDefault(newFileList);
-  const handleChangeImageOptional= ({ fileList: newFileList }) => setImageOptional(newFileList);
+    const handleChangeImageDefault= ({ fileList: newFileList }) => setImageDefault(newFileList);
+    const handleChangeImageOptional= ({ fileList: newFileList }) => setImageOptional(newFileList);
 
     const clickBtnEdit = (item) => {
         form.setFieldsValue({
@@ -190,9 +218,17 @@ function ProductPage() {
             discount: item.discount,
             status: item.status
         });
-        setState(prev => ({
-            ...prev,
-            visibleModal: true
+        if (item.image) {
+            setImageDefault([{
+                uid: '-1',
+                name: item.image,
+                status: 'done',
+                url: `http://localhost:/pos_img/${item.image}`
+            }]);
+        }
+        setState((p)=>({
+            ...p,
+            visibleModal: true,
         }));
     };
 
@@ -200,22 +236,11 @@ function ProductPage() {
         Modal.confirm({
             title: "Delete Product",
             content: "Are you sure you want to delete this product?",
-            okText: "Yes",
-            okType: "danger",
-            cancelText: "No",
             onOk: async () => {
-                try {
-                    const res = await request("product", "delete", {
-                        id: item.id
-                    });
-                    if (res && !res.error) {
-                        message.success("Product deleted successfully");
-                        getProducts(); // Refresh the product list
-                    } else {
-                        message.error(res.error || "Failed to delete product");
-                    }
-                } catch (error) {
-                    message.error("An error occurred while deleting the product");
+                const res = await request("product", "delete", { id: item.id });
+                if (res && !res.error) {
+                    message.success(res.message || "Product deleted successfully!");
+                    getProducts();
                 }
             }
         });
@@ -248,8 +273,7 @@ function ProductPage() {
                             prefix={<MdSearch />}
                             style={{ width: 300 }}
                             value={state.txtSearch}
-                            onChange={(e) => setState(prev => ({ ...prev, txtSearch: e.target.value }))}
-                            onSearch={(value) => setState(prev => ({ ...prev, txtSearch: value }))}
+                            onChange={(e) => handleSearch(e.target.value)}
                         />
                         <Select
                             allowClear
@@ -267,11 +291,11 @@ function ProductPage() {
                             value={state.selectedBrand}
                             onChange={(value) => setState(prev => ({ ...prev, selectedBrand: value }))}
                         />
-                        <Button
-                            onClick={() => setState(prev => ({ ...prev, txtSearch: '', selectedCategory: null, selectedBrand: null }))}
-                            style={{ minWidth: 80 }}
+                        <Button 
+                            onClick={handleClearFilters}
+                            icon={<MdClear />}
                         >
-                            Clear
+                            Clear Filters
                         </Button>
                     </div>
                 </Space>
@@ -287,7 +311,7 @@ function ProductPage() {
                     xl: 4,
                     xxl: 4,
                 }}
-                dataSource={state.filteredProducts}
+                dataSource={state.products}
                 renderItem={(item) => (
                     <List.Item>
                         <Card
@@ -304,7 +328,7 @@ function ProductPage() {
                                     {item.image ? (
                                         <Image
                                             alt={item.name}
-                                            src={`http://localhost/pos_img/${item.image}`}
+                                            src={`http://localhost:/pos_img/${item.image}`}
                                             style={{ 
                                                 width: '100%',
                                                 height: '100%',
@@ -339,7 +363,6 @@ function ProductPage() {
                                 title={item.name}
                                 description={
                                     <Space direction="vertical" size="small">
-                                        <Text type="secondary">Barcode: {item.barcode}</Text>
                                         <Text type="secondary">Brand: {item.brand}</Text>
                                         <Text type="secondary">Category: {item.category_name}</Text>
                                         <Text strong>Price: ${item.price}</Text>

@@ -227,9 +227,15 @@ const MainLayout = () => {
   };
 
   const getConfig = async () => {
-    const res = await request("config", "get");
-    if (res) {
-      setConfig(res);
+    try {
+      const res = await request("config", "get");
+      if (res && !res.error) {
+        setConfig(res);
+      } else {
+        console.error("Failed to load config:", res?.error);
+      }
+    } catch (error) {
+      console.error("Error loading config:", error);
     }
   };
 
