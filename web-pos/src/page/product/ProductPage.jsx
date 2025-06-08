@@ -24,6 +24,8 @@ function ProductPage() {
         Status:"",
         ParentId:null,
         txtSearch:"",
+        selectedCategory: null,
+        selectedBrand: null
     });
 
     const [previewOpen, setPreviewOpen] =useState(false);
@@ -104,16 +106,27 @@ function ProductPage() {
                 <Select
                     allowClear
                     style={{width:130}}
-                    placeholder="Product"
+                    placeholder="Category"
                     options={config.category}
+                    value={state.selectedCategory}
+                    onChange={(value) => setState(p => ({...p, selectedCategory: value}))}
                 />
                 <Select
                     allowClear
                     style={{width:130}}
                     placeholder="Brand"
                     options={config.brand}
+                    value={state.selectedBrand}
+                    onChange={(value) => setState(p => ({...p, selectedBrand: value}))}
                 />
-                <Button type="primary">
+                <Button type="primary" onClick={() => {
+                    // Add your filter logic here
+                    console.log('Filtering with:', {
+                        search: state.txtSearch,
+                        category: state.selectedCategory,
+                        brand: state.selectedBrand
+                    });
+                }}>
                     Filter
                 </Button>
                 </Space>
