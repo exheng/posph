@@ -1,168 +1,293 @@
 import React, { useState } from 'react';
-import { List, Typography, Space, Tag, Modal, Table, Button } from 'antd';
-import { MdShoppingCart, MdInfo, MdDelete } from 'react-icons/md';
+import { 
+    List, 
+    Typography, 
+    Button, 
+    Space, 
+    Badge, 
+    Modal, 
+    Table,
+    Tag,
+    Divider,
+    Empty
+} from 'antd';
+import { 
+    MdWarning, 
+    MdShoppingCart, 
+    MdNotifications,
+    MdNotificationsActive,
+    MdDelete,
+    MdInfo
+} from "react-icons/md";
 import { notificationStore } from '../../store/notification.store';
 import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
 
-dayjs.extend(relativeTime);
+const { Text, Title } = Typography;
 
-const { Text } = Typography;
+const getNotificationIcon = (type) => {
+    switch (type) {
+        case 'low_stock':
+            return <MdWarning style={{ fontSize: '24px', color: '#faad14' }} />;
+        case 'purchase_received':
+            return <MdShoppingCart style={{ fontSize: '24px', color: '#52c41a' }} />;
+        default:
+            return <MdNotifications style={{ fontSize: '24px', color: '#1890ff' }} />;
+    }
+};
 
-const MessagePanel = () => {
+const getNotificationColor = (type) => {
+    switch (type) {
+        case 'low_stock':
+            return '#faad14';
+        case 'purchase_received':
+            return '#52c41a';
+        default:
+            return '#1890ff';
+    }
+};
+
+function MessagePanel() {
     const { notifications, removeNotification } = notificationStore();
-    const readNotifications = notifications.filter(n => n.read);
-    const [selectedMessage, setSelectedMessage] = useState(null);
+    const [selectedNotification, setSelectedNotification] = useState(null);
+    const [modalVisible, setModalVisible] = useState(false);
 
-    const getNotificationIcon = (type) => {
-        switch (type) {
-            case 'purchase_received':
-                return <MdShoppingCart style={{ color: '#52c41a' }} />;
-            default:
-                return null;
-        }
+    const readNotifications = notifications.filter(n => n.read);
+
+    const handleViewDetails = (notification) => {
+        setSelectedNotification(notification);
+        setModalVisible(true);
     };
 
-    const columns = [
-        {
-            title: 'Product',
-            dataIndex: 'name',
-            key: 'name',
-        },
-        {
-            title: 'Quantity',
-            dataIndex: 'quantity',
-            key: 'quantity',
-            align: 'right',
-        },
-        {
-            title: 'Price',
-            dataIndex: 'price',
-            key: 'price',
-            align: 'right',
-            render: (price) => `$${Number(price).toFixed(2)}`,
-        },
-        {
-            title: 'Total',
-            dataIndex: 'total',
-            key: 'total',
-            align: 'right',
-            render: (total) => `$${Number(total).toFixed(2)}`,
-        },
-    ];
+    const handleCloseModal = () => {
+        setModalVisible(false);
+        setSelectedNotification(null);
+    };
 
     return (
-        <>
-            <div style={{ width: 360, maxHeight: 480, overflow: 'auto' }}>
-                <div style={{ 
-                    padding: '12px 16px', 
-                    borderBottom: '1px solid #f0f0f0',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center'
-                }}>
-                    <Text strong>Message History</Text>
-                </div>
+        <div style={{ width: '500px', maxHeight: '600px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ 
+                padding: '16px', 
+                borderBottom: '1px solid #f0f0f0',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                background: 'linear-gradient(135deg, #1890ff 0%, #096dd9 100%)',
+                color: 'white'
+            }}>
+                <Space>
+                    <MdNotificationsActive style={{ fontSize: '20px' }} />
+                    <Title level={5} style={{ margin: 0, color: 'white' }}>Message History</Title>
+                </Space>
+            </div>
 
-                <List
-                    dataSource={readNotifications}
-                    renderItem={(item) => (
-                        <List.Item
-                            style={{
-                                padding: '12px 16px',
-                                backgroundColor: item.cleared ? '#f5f5f5' : '#fafafa',
-                                transition: 'all 0.3s',
-                                cursor: 'pointer',
-                                opacity: item.cleared ? 0.8 : 1
-                            }}
-                            onClick={() => setSelectedMessage(item)}
-                            actions={[
-                                item.details && (
-                                    <Button 
-                                        type="text" 
-                                        icon={<MdInfo />}
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            setSelectedMessage(item);
-                                        }}
-                                    />
-                                ),
-                                <Button 
-                                    type="text" 
-                                    danger
-                                    icon={<MdDelete />}
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        removeNotification(item.id);
-                                    }}
+            <div style={{ flex: 1, overflow: 'auto' }}>
+                {readNotifications.length === 0 ? (
+                    <Empty
+                        image={Empty.PRESENTED_IMAGE_SIMPLE}
+                        description="No messages in history"
+                        style={{ margin: '32px 0' }}
+                    />
+                ) : (
+                    <List
+                        dataSource={readNotifications}
+                        renderItem={(item) => (
+                            <List.Item
+                                onClick={() => handleViewDetails(item)}
+                                style={{
+                                    padding: '16px',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.3s',
+                                    borderBottom: '1px solid #f0f0f0',
+                                    background: item.cleared ? '#f5f5f5' : 'white',
+                                    opacity: item.cleared ? 0.8 : 1,
+                                    ':hover': {
+                                        background: '#f5f5f5'
+                                    }
+                                }}
+                            >
+                                <List.Item.Meta
+                                    avatar={getNotificationIcon(item.type)}
+                                    title={
+                                        <Space>
+                                            <Text strong>{item.title}</Text>
+                                            <Tag color={getNotificationColor(item.type)}>
+                                                {item.type === 'low_stock' ? 'Low Stock' : 'Purchase Order'}
+                                            </Tag>
+                                            <Tag color={item.cleared ? 'default' : 'blue'}>
+                                                {item.cleared ? 'Cleared' : 'Read'}
+                                            </Tag>
+                                        </Space>
+                                    }
+                                    description={
+                                        <Space direction="vertical" size={0} style={{ width: '100%' }}>
+                                            <Text style={{ fontSize: '14px', marginBottom: '4px' }}>{item.message}</Text>
+                                            <Space style={{ justifyContent: 'space-between', width: '100%' }}>
+                                                <Text type="secondary" style={{ fontSize: '12px' }}>
+                                                    {dayjs(item.timestamp).fromNow()}
+                                                </Text>
+                                                <Button
+                                                    type="text"
+                                                    danger
+                                                    icon={<MdDelete />}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        removeNotification(item.id);
+                                                    }}
+                                                />
+                                            </Space>
+                                        </Space>
+                                    }
                                 />
-                            ]}
-                        >
-                            <List.Item.Meta
-                                avatar={getNotificationIcon(item.type)}
-                                title={
-                                    <Space>
-                                        <Text strong>{item.title}</Text>
-                                        <Tag color={item.cleared ? "default" : "processing"}>
-                                            {item.cleared ? "Cleared" : "Read"}
-                                        </Tag>
-                                    </Space>
-                                }
-                                description={
-                                    <Space direction="vertical" size={0}>
-                                        <Text type="secondary">{item.message}</Text>
-                                        <Text type="secondary" style={{ fontSize: '12px' }}>
-                                            {dayjs(item.timestamp).fromNow()}
-                                        </Text>
-                                    </Space>
-                                }
-                            />
-                        </List.Item>
-                    )}
-                    locale={{
-                        emptyText: 'No message history'
-                    }}
-                />
+                            </List.Item>
+                        )}
+                    />
+                )}
             </div>
 
             <Modal
-                title="Message Details"
-                open={!!selectedMessage}
-                onCancel={() => setSelectedMessage(null)}
-                footer={null}
+                title={
+                    <Space>
+                        {selectedNotification && getNotificationIcon(selectedNotification.type)}
+                        <span>Message Details</span>
+                    </Space>
+                }
+                open={modalVisible}
+                onCancel={handleCloseModal}
+                footer={[
+                    <Button key="close" onClick={handleCloseModal}>
+                        Close
+                    </Button>
+                ]}
                 width={700}
             >
-                {selectedMessage?.details && (
-                    <div>
-                        <Space direction="vertical" size="large" style={{ width: '100%' }}>
-                            <div>
-                                <Text strong>Supplier: </Text>
-                                <Text>{selectedMessage.details.supplier}</Text>
-                            </div>
-                            <div>
-                                <Text strong>Order Date: </Text>
-                                <Text>{selectedMessage.details.orderDate}</Text>
-                            </div>
-                            
-                            <Table
-                                columns={columns}
-                                dataSource={selectedMessage.details.items}
-                                pagination={false}
-                                rowKey="name"
-                            />
+                {selectedNotification && (
+                    <div style={{ padding: '16px' }}>
+                        <div style={{ marginBottom: '24px' }}>
+                            <Title level={5}>{selectedNotification.title}</Title>
+                            <Text style={{ fontSize: '16px', display: 'block', marginBottom: '16px' }}>
+                                {selectedNotification.message}
+                            </Text>
+                            <Space>
+                                <Tag color={getNotificationColor(selectedNotification.type)}>
+                                    {selectedNotification.type === 'low_stock' ? 'Low Stock' : 'Purchase Order'}
+                                </Tag>
+                                <Tag color={selectedNotification.cleared ? 'default' : 'blue'}>
+                                    {selectedNotification.cleared ? 'Cleared' : 'Read'}
+                                </Tag>
+                            </Space>
+                            <Text type="secondary" style={{ display: 'block', marginTop: '8px' }}>
+                                {dayjs(selectedNotification.timestamp).format('MMMM D, YYYY h:mm A')}
+                            </Text>
+                        </div>
 
-                            <div style={{ textAlign: 'right' }}>
-                                <Text strong>Total Amount: </Text>
-                                <Text strong style={{ color: '#52c41a' }}>
-                                    ${Number(selectedMessage.details.totalAmount).toFixed(2)}
-                                </Text>
+                        <Divider />
+
+                        {selectedNotification.type === 'low_stock' && selectedNotification.details && (
+                            <div style={{ 
+                                background: '#fafafa', 
+                                padding: '24px', 
+                                borderRadius: '8px',
+                                marginBottom: '16px'
+                            }}>
+                                <Title level={5} style={{ marginBottom: '24px' }}>Product Details</Title>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+                                    <div>
+                                        <Text type="secondary" style={{ fontSize: '14px' }}>Product Name</Text>
+                                        <div><Text strong style={{ fontSize: '16px' }}>{selectedNotification.details.productName}</Text></div>
+                                    </div>
+                                    <div>
+                                        <Text type="secondary" style={{ fontSize: '14px' }}>Current Stock</Text>
+                                        <div><Text strong style={{ fontSize: '16px', color: '#faad14' }}>{selectedNotification.details.currentStock} units</Text></div>
+                                    </div>
+                                    <div>
+                                        <Text type="secondary" style={{ fontSize: '14px' }}>Category</Text>
+                                        <div><Text strong style={{ fontSize: '16px' }}>{selectedNotification.details.category}</Text></div>
+                                    </div>
+                                    <div>
+                                        <Text type="secondary" style={{ fontSize: '14px' }}>Brand</Text>
+                                        <div><Text strong style={{ fontSize: '16px' }}>{selectedNotification.details.brand}</Text></div>
+                                    </div>
+                                    <div>
+                                        <Text type="secondary" style={{ fontSize: '14px' }}>Stock Threshold</Text>
+                                        <div><Text strong style={{ fontSize: '16px', color: '#ff4d4f' }}>{selectedNotification.details.threshold} units</Text></div>
+                                    </div>
+                                </div>
                             </div>
-                        </Space>
+                        )}
+
+                        {selectedNotification.type === 'purchase_received' && selectedNotification.details && (
+                            <>
+                                <div style={{ 
+                                    background: '#fafafa', 
+                                    padding: '24px', 
+                                    borderRadius: '8px',
+                                    marginBottom: '24px'
+                                }}>
+                                    <Title level={5} style={{ marginBottom: '24px' }}>Order Information</Title>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+                                        <div>
+                                            <Text type="secondary" style={{ fontSize: '14px' }}>Supplier</Text>
+                                            <div><Text strong style={{ fontSize: '16px' }}>{selectedNotification.details.supplier}</Text></div>
+                                        </div>
+                                        <div>
+                                            <Text type="secondary" style={{ fontSize: '14px' }}>Order Date</Text>
+                                            <div><Text strong style={{ fontSize: '16px' }}>{selectedNotification.details.orderDate}</Text></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <Title level={5} style={{ marginBottom: '16px' }}>Order Items</Title>
+                                <Table
+                                    dataSource={selectedNotification.details.items}
+                                    pagination={false}
+                                    columns={[
+                                        {
+                                            title: 'Product',
+                                            dataIndex: 'name',
+                                            key: 'name',
+                                            render: (text) => <Text strong>{text}</Text>
+                                        },
+                                        {
+                                            title: 'Quantity',
+                                            dataIndex: 'quantity',
+                                            key: 'quantity',
+                                            align: 'right',
+                                            render: (text) => <Text>{text} units</Text>
+                                        },
+                                        {
+                                            title: 'Price',
+                                            dataIndex: 'price',
+                                            key: 'price',
+                                            align: 'right',
+                                            render: (price) => <Text strong>${Number(price).toFixed(2)}</Text>
+                                        },
+                                        {
+                                            title: 'Total',
+                                            key: 'total',
+                                            align: 'right',
+                                            render: (_, record) => <Text strong>${Number(record.total).toFixed(2)}</Text>
+                                        },
+                                    ]}
+                                />
+
+                                <div style={{ 
+                                    textAlign: 'right', 
+                                    marginTop: '24px',
+                                    padding: '24px',
+                                    background: '#fafafa',
+                                    borderRadius: '8px'
+                                }}>
+                                    <Text strong style={{ fontSize: '18px' }}>
+                                        Total Amount: ${Number(selectedNotification.details.totalAmount).toFixed(2)}
+                                    </Text>
+                                </div>
+                            </>
+                        )}
                     </div>
                 )}
             </Modal>
-        </>
+        </div>
     );
-};
+}
 
 export default MessagePanel; 

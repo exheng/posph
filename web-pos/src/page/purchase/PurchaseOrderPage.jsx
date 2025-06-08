@@ -137,7 +137,7 @@ function PurchaseOrderPage() {
     const navigate = useNavigate();
     const location = useLocation();
     const { config } = configStore();
-    const { addNotification } = notificationStore();
+    const { addNotification, handleRealtimeUpdate } = notificationStore();
     const [form] = Form.useForm();
     const receiptRef = useRef();
     const [state, setState] = useState({
@@ -156,7 +156,33 @@ function PurchaseOrderPage() {
     useEffect(() => {
         getOrders();
         getProducts();
-    }, []);
+        
+        // Check if we should auto-create a purchase order
+        if (location.state?.autoCreate && location.state?.product) {
+            const { product } = location.state;
+            setState(prev => ({
+                ...prev,
+                visibleModal: true,
+                orderItems: [{
+                    product_id: product.id,
+                    quantity: product.quantity,
+                    price: product.price
+                }],
+                totalAmount: product.quantity * product.price
+            }));
+
+            // Set form values
+            form.setFieldsValue({
+                order_date: dayjs(),
+                expected_delivery_date: dayjs().add(7, 'day'),
+                status: 'pending',
+                notes: `Auto-generated purchase order for ${product.name} due to low stock (Current: ${product.current_stock}, Threshold: ${product.threshold})`
+            });
+
+            // Clear the location state
+            window.history.replaceState({}, document.title);
+        }
+    }, [location.state]);
 
     const getOrders = async () => {
         try {
@@ -324,7 +350,7 @@ function PurchaseOrderPage() {
                         };
                     });
 
-                    addNotification({
+                    handleRealtimeUpdate({
                         type: 'purchase_received',
                         title: 'Purchase Order Received',
                         message: `Purchase order from ${supplierName} has been received and inventory has been updated.`,
