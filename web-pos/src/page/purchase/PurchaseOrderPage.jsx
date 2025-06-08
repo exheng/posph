@@ -33,6 +33,7 @@ import dayjs from 'dayjs';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { configStore } from '../../store/configStore';
 import ReactToPrint from 'react-to-print';
+import { notificationStore } from '../../store/notification.store';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -136,6 +137,7 @@ function PurchaseOrderPage() {
     const navigate = useNavigate();
     const location = useLocation();
     const { config } = configStore();
+    const { addNotification } = notificationStore();
     const [form] = Form.useForm();
     const receiptRef = useRef();
     const [state, setState] = useState({
@@ -288,9 +290,8 @@ function PurchaseOrderPage() {
         try {
             setState(prev => ({ ...prev, loading: true }));
             
-            // Format dates to YYYY-MM-DD
             const orderData = {
-                id: state.selectedOrder?.id, // Include ID for updates
+                id: state.selectedOrder?.id,
                 supplier_id: values.supplier_id,
                 order_date: values.order_date.format('YYYY-MM-DD'),
                 expected_delivery_date: values.expected_delivery_date.format('YYYY-MM-DD'),
@@ -301,20 +302,44 @@ function PurchaseOrderPage() {
                     price: Number(item.price)
                 })),
                 total_amount: state.totalAmount,
-                status: values.status || 'pending' // Ensure status is included with a default value
+                status: values.status || 'pending'
             };
-
-            // Log the data being sent for debugging
-            console.log('Submitting order data:', orderData);
-            console.log('Status value:', values.status);
 
             const method = state.selectedOrder ? 'put' : 'post';
             const res = await request("purchase", method, orderData);
             
             if (res && !res.error) {
+                // Add notification if order is marked as received
+                if (values.status === 'received') {
+                    const supplierName = config?.supplier?.find(s => s.value === values.supplier_id)?.label || 'Unknown Supplier';
+                    
+                    // Get product details for the notification
+                    const productDetails = state.orderItems.map(item => {
+                        const product = state.products.find(p => p.id === item.product_id);
+                        return {
+                            name: product?.name || 'Unknown Product',
+                            quantity: item.quantity,
+                            price: item.price,
+                            total: item.quantity * item.price
+                        };
+                    });
+
+                    addNotification({
+                        type: 'purchase_received',
+                        title: 'Purchase Order Received',
+                        message: `Purchase order from ${supplierName} has been received and inventory has been updated.`,
+                        details: {
+                            supplier: supplierName,
+                            orderDate: values.order_date.format('YYYY-MM-DD'),
+                            items: productDetails,
+                            totalAmount: state.totalAmount
+                        }
+                    });
+                }
+
                 message.success(res.message || "Purchase order saved successfully!");
                 oncloseModal();
-                await getOrders(); // Refresh the list to show updated status
+                await getOrders();
             } else {
                 message.error(res.error || "Failed to save purchase order");
             }

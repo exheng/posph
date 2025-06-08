@@ -47,6 +47,9 @@ import imguser from "../../assets/imguser.jpg";
 import { getProfile, setAccessToken, setProfile } from "../../store/profile.store";
 import { request } from "../../util/helper";
 import { configStore } from "../../store/configStore";
+import { notificationStore } from "../../store/notification.store";
+import NotificationPanel from "./NotificationPanel";
+import MessagePanel from "./MessagePanel";
 
 const { Header, Content, Footer, Sider } = Layout;
 const { Text, Title } = Typography;
@@ -208,8 +211,11 @@ const items = [
 
 const MainLayout = () => {
   const { setConfig } = configStore();
+  const { notifications } = notificationStore();
   const profile = getProfile();
   const [collapsed, setCollapsed] = useState(false);
+  const [notificationVisible, setNotificationVisible] = useState(false);
+  const [messageVisible, setMessageVisible] = useState(false);
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
@@ -390,7 +396,7 @@ const MainLayout = () => {
 
           <Space size="large" align="center">
             <Tooltip title="Notifications">
-              <Badge count={5} size="small">
+              <Badge count={notifications.filter(n => !n.read).length} size="small">
                 <Button
                   type="text"
                   icon={<BellOutlined />}
@@ -403,12 +409,16 @@ const MainLayout = () => {
                     justifyContent: "center",
                     borderRadius: "8px",
                   }}
+                  onClick={() => {
+                    setNotificationVisible(!notificationVisible);
+                    setMessageVisible(false);
+                  }}
                 />
               </Badge>
             </Tooltip>
 
             <Tooltip title="Messages">
-              <Badge count={2} size="small">
+              <Badge count={notifications.filter(n => n.read).length} size="small">
                 <Button
                   type="text"
                   icon={<MailOutlined />}
@@ -420,6 +430,10 @@ const MainLayout = () => {
                     alignItems: "center",
                     justifyContent: "center",
                     borderRadius: "8px",
+                  }}
+                  onClick={() => {
+                    setMessageVisible(!messageVisible);
+                    setNotificationVisible(false);
                   }}
                 />
               </Badge>
@@ -458,6 +472,38 @@ const MainLayout = () => {
               </Dropdown>
             </div>
           </Space>
+
+          {notificationVisible && (
+            <div
+              style={{
+                position: 'absolute',
+                top: '80px',
+                right: '24px',
+                zIndex: 1000,
+                backgroundColor: 'white',
+                borderRadius: '8px',
+                boxShadow: '0 3px 6px -4px rgba(0,0,0,0.12), 0 6px 16px 0 rgba(0,0,0,0.08), 0 9px 28px 8px rgba(0,0,0,0.05)'
+              }}
+            >
+              <NotificationPanel />
+            </div>
+          )}
+
+          {messageVisible && (
+            <div
+              style={{
+                position: 'absolute',
+                top: '80px',
+                right: '24px',
+                zIndex: 1000,
+                backgroundColor: 'white',
+                borderRadius: '8px',
+                boxShadow: '0 3px 6px -4px rgba(0,0,0,0.12), 0 6px 16px 0 rgba(0,0,0,0.08), 0 9px 28px 8px rgba(0,0,0,0.05)'
+              }}
+            >
+              <MessagePanel />
+            </div>
+          )}
         </div>
 
         <Content

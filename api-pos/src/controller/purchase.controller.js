@@ -88,17 +88,11 @@ exports.update = async (req, res) => {
     try {
         const { id, supplier_id, order_date, expected_delivery_date, notes, items, total_amount, status } = req.body;
 
-        // Log the incoming data for debugging
-        console.log('Updating purchase order with data:', {
-            id,
-            supplier_id,
-            order_date,
-            expected_delivery_date,
-            notes,
-            items,
-            total_amount,
-            status
-        });
+        // Get the current order status
+        const [currentOrder] = await db.query(
+            "SELECT status FROM purchase_order WHERE id = ?",
+            [id]
+        );
 
         // Update purchase order
         const [result] = await db.query(
@@ -116,13 +110,27 @@ exports.update = async (req, res) => {
                 expected_delivery_date,
                 notes,
                 total_amount,
-                status || 'pending', // Ensure status has a default value
+                status || 'pending',
                 id
             ]
         );
 
-        // Log the update result
-        console.log('Update result:', result);
+        // If status is changing to 'received', update product quantities
+        if (status === 'received' && currentOrder[0].status !== 'received') {
+            // Get order items
+            const [orderItems] = await db.query(
+                `SELECT product_id, quantity FROM purchase_order_item WHERE purchase_order_id = ?`,
+                [id]
+            );
+
+            // Update product quantities
+            for (let item of orderItems) {
+                await db.query(
+                    `UPDATE product SET qty = qty + ? WHERE id = ?`,
+                    [item.quantity, item.product_id]
+                );
+            }
+        }
 
         // Delete existing items
         await db.query("DELETE FROM purchase_order_item WHERE purchase_order_id = ?", [id]);
