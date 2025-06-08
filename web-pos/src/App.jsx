@@ -18,6 +18,8 @@ import UserPage from "./page/user/UserPage";
 import RolePage from "./page/role/RolePage";
 import SupplierPage from "./page/purchase/SupplierPage";
 import ProductPage from "./page/product/productPage";
+import StockAlertPage from "./page/product/StockAlertPage";
+import PurchaseOrderPage from "./page/purchase/PurchaseOrderPage";
 
 function App() {
   return (
@@ -29,6 +31,8 @@ function App() {
       <Route path="/costomer" element={<CostomerPage/>}/>
       <Route path="/category" element={<CategoryPage/>}/>
       <Route path="/product" element={<ProductPage/>}/>
+      <Route path="/stock-alerts" element={<StockAlertPage/>}/>
+      <Route path="/purchase" element={<PurchaseOrderPage/>}/>
       <Route path="/user" element={<UserPage/>}/>
       <Route path="/role" element={<RolePage/>}/>
       <Route path="/supplier" element={<SupplierPage/>}/>

@@ -164,6 +164,8 @@ function ProductPage() {
             params.append("price", items.price);
             params.append("discount", items.discount);
             params.append("status", items.status);
+            
+            // Only append image if a new one is selected
             if (items.image_default?.file?.originFileObj) {
                 params.append("upload_image", items.image_default.file.originFileObj, items.image_default.file.name);
             }
@@ -380,7 +382,7 @@ function ProductPage() {
 
             <Modal 
                 open={state.visibleModal}
-                title={form.getFieldValue("Id") ? "Edit Product" : "New Product"} 
+                title={form.getFieldValue("id") ? "Edit Product" : "New Product"} 
                 footer={null} 
                 onCancel={oncloseModal}
                 width={700}
@@ -396,7 +398,7 @@ function ProductPage() {
                                     }
                                 ]}
                             > 
-                            <Input placeholder="Input Product Name" />
+                                <Input placeholder="Input Product Name" />
                             </Form.Item>
 
                             <Form.Item name="brand" label="Brand"
@@ -512,7 +514,7 @@ function ProductPage() {
                         <Space>
                             <Button onClick={oncloseModal}>Cancel</Button>
                             <Button type="primary" htmlType="submit" onClick={onFinish}>
-                            {form.getFieldValue("Id") ? "Update" : "Save"}
+                            {form.getFieldValue("id") ? "Update" : "Save"}
                             </Button>
                         </Space>
                     </div>

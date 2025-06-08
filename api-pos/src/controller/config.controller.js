@@ -9,26 +9,27 @@ exports.getList = async (req,res) => {
 
         const purchase_status = [
             {
-                label:"Pending",
-                value:"Pending",
+                label: "Pending",
+                value: "pending"
             },
             {
-                label:"Approved",
-                value:"Approved",
+                label: "Approved",
+                value: "approved"
             },
             {
-                label:"Shipped",
-                value:"Shipped",
+                label: "Shipped",
+                value: "shipped"
             },
             {
-                label:"Received",
-                value:"Received",
+                label: "Received",
+                value: "received"
             },
             {
-                label:"Issue",
-                value:"Issue",
-            },
+                label: "Cancelled",
+                value: "cancelled"
+            }
         ];
+
         const brand = [
             {label:"Apple", value:"Apple", country:"USA"},
             {label:"Samsung", value:"Samsung", country:"South Korea"},
