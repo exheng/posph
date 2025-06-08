@@ -21,6 +21,8 @@ import ProductPage from "./page/product/productPage";
 import StockAlertPage from "./page/product/StockAlertPage";
 import PurchaseOrderPage from "./page/purchase/PurchaseOrderPage";
 import PosPage from "./page/pos/PosPage";
+import PaymentPage from './page/pos/PaymentPage';
+import CustomerSelectionPage from './page/pos/CustomerSelectionPage';
 
 function App() {
   return (
@@ -39,6 +41,8 @@ function App() {
       <Route path="/supplier" element={<SupplierPage/>}/>
       <Route path="/pos" element={<PosPage/>}/>
       <Route path="/Product/Category1" element={<PurchasePage/>}/>
+      <Route path="/payment" element={<PaymentPage/>} />
+      <Route path="/pos/customer-selection" element={<CustomerSelectionPage />} />
       <Route path="*" element={<h1>Route Not Found!!</h1>}/>
       </Route>
 

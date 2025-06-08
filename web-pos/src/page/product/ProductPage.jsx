@@ -225,7 +225,7 @@ function ProductPage() {
                 uid: '-1',
                 name: item.image,
                 status: 'done',
-                url: `http://localhost:/pos_img/${item.image}`
+                url: `http://localhost:8081/pos_img/${item.image}`
             }]);
         }
         setState((p)=>({
@@ -330,7 +330,7 @@ function ProductPage() {
                                     {item.image ? (
                                         <Image
                                             alt={item.name}
-                                            src={`http://localhost:/pos_img/${item.image}`}
+                                            src={`http://localhost:8081/pos_img/${item.image}`}
                                             style={{ 
                                                 width: '100%',
                                                 height: '100%',

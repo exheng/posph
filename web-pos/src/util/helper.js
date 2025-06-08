@@ -1,9 +1,9 @@
- import axios from "axios";
- import { Config } from "./config";
+import axios from "axios";
+import { Config } from "./config";
 import { setServerSatus } from "../store/server.store";
 import { getAccessToken } from "../store/profile.store";
 
- export const request = (url ="", method ="get",data ={}) =>{
+export const request = (url ="", method ="get",data ={}) =>{
     var access_token = getAccessToken();
     var headers = { "Content-Type": "application/json"};
     if (data instanceof FormData) {
@@ -32,10 +32,11 @@ import { getAccessToken } from "../store/profile.store";
             status = 403;
           }
           setServerSatus(status);
+          console.error(`API Error: Status ${status}, URL: ${err.config.url}, Method: ${err.config.method}`, response.data);
         }
         else if(err.code =="ERR_NETWORK"){
-          
           setServerSatus("error");
+          console.error(`Network Error: URL: ${err.config.url}, Method: ${err.config.method}`, err.message);
         }
         console.log(">>>",err);
         return false;

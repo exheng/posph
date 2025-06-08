@@ -2,3 +2,7 @@ Error: You have an error in your SQL syntax; check the manual that corresponds t
 ReferenceError: con is not defined
 Error: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near ' Name, Description FROM category' at line 1
 Error: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near ' Name, Description FROM category' at line 1
+Error
+Error
+Error
+Error

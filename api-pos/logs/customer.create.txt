@@ -1,0 +1,3 @@
+Error: Unknown column 'phone' in 'field list'
+Error: Unknown column 'phone' in 'field list'
+Error: Unknown column 'phone' in 'field list'

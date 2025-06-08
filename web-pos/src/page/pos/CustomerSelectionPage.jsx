@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import {
-    Table,
     Card,
     Space,
     Button,
@@ -9,41 +8,55 @@ import {
     Form,
     message,
     Typography,
-    Select,
-    Row,
-    Col,
+    Tabs,
+    Table,
     Tag,
-    Tooltip
+    Tooltip,
+    Divider
 } from 'antd';
 import {
-    MdAdd,
     MdSearch,
-    MdEdit,
-    MdDelete,
     MdPerson,
     MdPhone,
     MdEmail,
-    MdLocationOn
+    MdLocationOn,
+    MdAdd,
+    MdArrowForward
 } from "react-icons/md";
 import { request } from '../../util/helper';
 import MainPage from '../../component/layout/Mainpage';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
 
-function CustomerPage() {
+function CustomerSelectionPage() {
+    const navigate = useNavigate();
+    const location = useLocation();
     const [form] = Form.useForm();
     const [state, setState] = useState({
         customers: [],
         loading: false,
-        visibleModal: false,
-        selectedCustomer: null,
         searchText: '',
+        selectedCustomer: null,
+        visibleModal: false,
+        cartData: null,
     });
 
     useEffect(() => {
         getCustomers();
-    }, []);
+        if (location.state) {
+            setState(prev => ({
+                ...prev,
+                cartData: {
+                    cart: location.state.cart,
+                    total: location.state.total,
+                    subtotal: location.state.subtotal,
+                    discount: location.state.discount,
+                }
+            }));
+        }
+    }, [location.state]);
 
     const getCustomers = async () => {
         try {
@@ -73,33 +86,15 @@ function CustomerPage() {
     const showCreateModal = () => {
         setState(prev => ({
             ...prev,
-            visibleModal: true,
-            selectedCustomer: null
+            visibleModal: true
         }));
         form.resetFields();
-    };
-
-    const showEditModal = (customer) => {
-        setState(prev => ({
-            ...prev,
-            visibleModal: true,
-            selectedCustomer: customer
-        }));
-
-        form.setFieldsValue({
-            id: customer.id,
-            name: customer.name,
-            tel: customer.tel,
-            email: customer.email,
-            address: customer.address
-        });
     };
 
     const oncloseModal = () => {
         setState(prev => ({
             ...prev,
-            visibleModal: false,
-            selectedCustomer: null
+            visibleModal: false
         }));
         form.resetFields();
     };
@@ -109,48 +104,52 @@ function CustomerPage() {
             setState(prev => ({ ...prev, loading: true }));
             
             const customerData = {
-                id: state.selectedCustomer?.id,
                 name: values.name,
-                tel: values.tel,
+                phone: values.phone,
                 email: values.email,
                 address: values.address
             };
 
-            const method = state.selectedCustomer ? 'put' : 'post';
-            const res = await request("customer", method, customerData);
+            const res = await request("customer", "post", customerData);
             
             if (res && !res.error) {
-                message.success(res.message || "Customer saved successfully!");
+                message.success(res.message || "Customer registered successfully!");
                 oncloseModal();
-                getCustomers();
+                await getCustomers();
+                // Select the newly created customer
+                setState(prev => ({
+                    ...prev,
+                    selectedCustomer: res.data
+                }));
             } else {
-                message.error(res.error || "Failed to save customer");
+                message.error(res.error || "Failed to register customer");
             }
         } catch (error) {
-            console.error("Error saving customer:", error);
-            message.error("An error occurred while saving the customer");
+            console.error("Error registering customer:", error);
+            message.error("An error occurred while registering the customer");
         } finally {
             setState(prev => ({ ...prev, loading: false }));
         }
     };
 
-    const handleDelete = (customer) => {
-        Modal.confirm({
-            title: "Delete Customer",
-            content: "Are you sure you want to delete this customer?",
-            onOk: async () => {
-                try {
-                    const res = await request("customer", "delete", { id: customer.id });
-                    if (res && !res.error) {
-                        message.success(res.message || "Customer deleted successfully!");
-                        getCustomers();
-                    } else {
-                        message.error(res.error || "Failed to delete customer");
-                    }
-                } catch (error) {
-                    console.error("Error deleting customer:", error);
-                    message.error("An error occurred while deleting the customer");
-                }
+    const handleCustomerSelect = (customer) => {
+        setState(prev => ({
+            ...prev,
+            selectedCustomer: customer
+        }));
+    };
+
+    const handleProceedToPayment = () => {
+        if (!state.selectedCustomer) {
+            message.error("Please select or register a customer first");
+            return;
+        }
+
+        // Navigate to payment page with customer data
+        navigate('/payment', {
+            state: {
+                ...location.state,
+                customer: state.selectedCustomer
             }
         });
     };
@@ -187,7 +186,7 @@ function CustomerPage() {
                 <Space direction="vertical" size="small">
                     <Space>
                         <MdPhone size={16} />
-                        <Text>{record.tel || 'N/A'}</Text>
+                        <Text>{record.phone || 'N/A'}</Text>
                     </Space>
                     <Space>
                         <MdEmail size={16} />
@@ -206,36 +205,12 @@ function CustomerPage() {
                     <Text>{text || 'No address provided'}</Text>
                 </Space>
             )
-        },
-        {
-            title: 'Action',
-            key: 'action',
-            width: 120,
-            render: (_, record) => (
-                <Space>
-                    <Tooltip title="Edit">
-                        <Button 
-                            type="text" 
-                            icon={<MdEdit />} 
-                            onClick={() => showEditModal(record)}
-                        />
-                    </Tooltip>
-                    <Tooltip title="Delete">
-                        <Button 
-                            type="text" 
-                            danger 
-                            icon={<MdDelete />} 
-                            onClick={() => handleDelete(record)}
-                        />
-                    </Tooltip>
-                </Space>
-            )
         }
     ];
 
     const filteredCustomers = state.customers.filter(customer =>
         customer.name?.toLowerCase().includes(state.searchText.toLowerCase()) ||
-        customer.tel?.toLowerCase().includes(state.searchText.toLowerCase()) ||
+        customer.phone?.toLowerCase().includes(state.searchText.toLowerCase()) ||
         customer.email?.toLowerCase().includes(state.searchText.toLowerCase())
     );
 
@@ -245,8 +220,8 @@ function CustomerPage() {
                 <Space direction="vertical" size="middle" style={{ width: '100%' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <div>
-                            <Title level={4} style={{ margin: 0 }}>Customers</Title>
-                            <Text type="secondary">Manage your customer database</Text>
+                            <Title level={4} style={{ margin: 0 }}>Select Customer</Title>
+                            <Text type="secondary">Choose an existing customer or register a new one</Text>
                         </div>
                         <Button 
                             type="primary"
@@ -258,7 +233,7 @@ function CustomerPage() {
                                 boxShadow: '0 2px 8px rgba(24, 144, 255, 0.2)'
                             }}
                         >
-                            Add New Customer
+                            Register New Customer
                         </Button>
                     </div>
 
@@ -278,15 +253,54 @@ function CustomerPage() {
                     dataSource={filteredCustomers}
                     rowKey="id"
                     pagination={{
-                        pageSize: 10,
+                        pageSize: 5,
                         showSizeChanger: true,
                         showTotal: (total) => `Total ${total} customers`
                     }}
+                    onRow={(record) => ({
+                        onClick: () => handleCustomerSelect(record),
+                        style: {
+                            cursor: 'pointer',
+                            background: state.selectedCustomer?.id === record.id ? '#e6f7ff' : 'inherit'
+                        }
+                    })}
                 />
             </Card>
 
+            {state.selectedCustomer && (
+                <Card style={{ marginTop: 16 }}>
+                    <Space direction="vertical" style={{ width: '100%' }}>
+                        <Title level={5}>Selected Customer</Title>
+                        <Space>
+                            <Tag color="blue">Name: {state.selectedCustomer.name}</Tag>
+                            <Tag color="green">Phone: {state.selectedCustomer.phone}</Tag>
+                            {state.selectedCustomer.email && (
+                                <Tag color="purple">Email: {state.selectedCustomer.email}</Tag>
+                            )}
+                        </Space>
+                    </Space>
+                </Card>
+            )}
+
+            <div style={{ marginTop: 24, textAlign: 'right' }}>
+                <Button 
+                    type="primary"
+                    size="large"
+                    icon={<MdArrowForward />}
+                    onClick={handleProceedToPayment}
+                    disabled={!state.selectedCustomer}
+                    style={{ 
+                        background: 'linear-gradient(135deg, #52c41a 0%, #389e0d 100%)',
+                        border: 'none',
+                        boxShadow: '0 2px 8px rgba(82, 196, 26, 0.2)'
+                    }}
+                >
+                    Proceed to Payment
+                </Button>
+            </div>
+
             <Modal
-                title={state.selectedCustomer ? "Edit Customer" : "New Customer"}
+                title="Register New Customer"
                 open={state.visibleModal}
                 onCancel={oncloseModal}
                 footer={null}
@@ -305,7 +319,7 @@ function CustomerPage() {
                     </Form.Item>
 
                     <Form.Item
-                        name="tel"
+                        name="phone"
                         label="Phone Number"
                         rules={[
                             { required: true, message: 'Please enter phone number' },
@@ -340,7 +354,7 @@ function CustomerPage() {
                         <Space style={{ width: '100%', justifyContent: 'flex-end' }}>
                             <Button onClick={oncloseModal}>Cancel</Button>
                             <Button type="primary" htmlType="submit">
-                                {state.selectedCustomer ? 'Update Customer' : 'Add Customer'}
+                                Register Customer
                             </Button>
                         </Space>
                     </Form.Item>
@@ -350,4 +364,4 @@ function CustomerPage() {
     );
 }
 
-export default CustomerPage;
+export default CustomerSelectionPage; 

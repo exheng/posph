@@ -38,7 +38,8 @@ import {
   Typography,
   Button,
   Divider,
-  Tooltip
+  Tooltip,
+  Spin
 } from "antd";
 import { Navigate, Outlet, useNavigate } from "react-router-dom";
 import "./MainLayout.css";
@@ -216,15 +217,20 @@ const MainLayout = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [notificationVisible, setNotificationVisible] = useState(false);
   const [messageVisible, setMessageVisible] = useState(false);
+  const [configLoading, setConfigLoading] = useState(true);
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
 
   useEffect(() => {
-    getConfig();
-    if (!profile) {
-      navigate("/login");
-    }
+    const initializeApp = async () => {
+      await getConfig();
+      if (!profile) {
+        navigate("/login");
+      }
+      setConfigLoading(false);
+    };
+    initializeApp();
   }, []);
 
   const navigate = useNavigate();
@@ -512,18 +518,24 @@ const MainLayout = () => {
             minHeight: "calc(100vh - 128px)",
           }}
         >
-          <div
-            style={{
-              background: colorBgContainer,
-              borderRadius: borderRadiusLG,
-              padding: "24px",
-              minHeight: "100%",
-              boxShadow: "0 2px 8px 0 rgba(0, 0, 0, 0.06)",
-              border: "1px solid #f0f0f0",
-            }}
-          >
-            <Outlet />
-          </div>
+          {configLoading ? (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+              <Spin size="large" tip="Loading Application..." />
+            </div>
+          ) : (
+            <div
+              style={{
+                background: colorBgContainer,
+                borderRadius: borderRadiusLG,
+                padding: "24px",
+                minHeight: "100%",
+                boxShadow: "0 2px 8px 0 rgba(0, 0, 0, 0.06)",
+                border: "1px solid #f0f0f0",
+              }}
+            >
+              <Outlet />
+            </div>
+          )}
         </Content>
 
         <div
