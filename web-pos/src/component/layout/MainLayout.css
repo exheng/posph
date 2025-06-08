@@ -52,3 +52,133 @@
     margin-right: 15px;
    
   }
+
+/* Custom Menu Styling */
+.custom-menu {
+  padding: 8px;
+}
+
+.custom-menu .ant-menu-item {
+  margin: 4px 0;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.custom-menu .ant-menu-item:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+.custom-menu .ant-menu-item-selected {
+  background: #1890ff !important;
+}
+
+.custom-menu .ant-menu-submenu-title {
+  margin: 4px 0;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.custom-menu .ant-menu-submenu-title:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* User Avatar Hover Effect */
+.user-avatar-hover:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 0 2px #1890ff;
+}
+
+/* Header Search Input */
+.ant-input-search .ant-input {
+  border-radius: 8px;
+  border: 1px solid #f0f0f0;
+  transition: all 0.3s ease;
+}
+
+.ant-input-search .ant-input:hover,
+.ant-input-search .ant-input:focus {
+  border-color: #1890ff;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.1);
+}
+
+/* Notification Badge */
+.ant-badge-count {
+  box-shadow: 0 0 0 1px #fff;
+}
+
+/* Menu Icons */
+.ant-menu-item .anticon,
+.ant-menu-submenu-title .anticon {
+  font-size: 18px;
+  transition: all 0.3s ease;
+}
+
+.ant-menu-item:hover .anticon,
+.ant-menu-submenu-title:hover .anticon {
+  transform: scale(1.1);
+}
+
+/* Content Area */
+.ant-layout-content {
+  transition: all 0.3s ease;
+}
+
+/* Dropdown Menu */
+.ant-dropdown-menu {
+  border-radius: 8px;
+  box-shadow: 0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 6px 16px 0 rgba(0, 0, 0, 0.08), 0 9px 28px 8px rgba(0, 0, 0, 0.05);
+}
+
+.ant-dropdown-menu-item {
+  transition: all 0.3s ease;
+}
+
+.ant-dropdown-menu-item:hover {
+  background: #f5f5f5;
+}
+
+/* Button Hover Effects */
+.ant-btn {
+  transition: all 0.3s ease;
+}
+
+.ant-btn:hover {
+  transform: translateY(-1px);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .ant-layout-sider {
+    position: fixed;
+    height: 100vh;
+    z-index: 1000;
+  }
+  
+  .ant-layout-header {
+    padding: 0 16px;
+  }
+  
+  .ant-input-search {
+    max-width: 200px;
+  }
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
