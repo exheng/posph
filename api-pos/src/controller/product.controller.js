@@ -72,18 +72,32 @@ exports.update = async (req, res) => {
                 price = :price,
                 discount = :discount,
                 status = :status,
-                image = COALESCE(:image, image)
+                image = CASE 
+                    WHEN :image IS NOT NULL THEN :image 
+                    ELSE image 
+                END
             WHERE id = :id
         `;
 
-        const [data] = await db.query(sql, {
-            ...req.body,
+        const params = {
+            id: req.body.id,
+            category_id: req.body.category_id,
+            barcode: req.body.barcode,
+            name: req.body.name,
+            brand: req.body.brand,
+            description: req.body.description,
+            qty: req.body.qty,
+            price: req.body.price,
+            discount: req.body.discount,
+            status: req.body.status,
             image: req.file?.filename
-        });
+        };
+
+        const [data] = await db.query(sql, params);
 
         res.json({
             data,
-            message: "Update Success!"
+            message: "Product updated successfully!"
         });
     } catch (error) {
         logError("product.update", error, res);
