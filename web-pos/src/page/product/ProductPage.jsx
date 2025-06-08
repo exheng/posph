@@ -1,10 +1,36 @@
 import React, { useEffect, useState } from "react";
 import { request } from "../../util/helper";
-import { Space, Table, Tag ,Modal,Input, Select, message, List,Form, InputNumber, Upload, Image, Row, Col} from "antd";
-import { MdAdd, MdDelete , MdEdit } from "react-icons/md";
-import { Button } from 'antd';
+import { 
+  Space, 
+  Table, 
+  Tag, 
+  Modal, 
+  Input, 
+  Select, 
+  message, 
+  List, 
+  Form, 
+  InputNumber, 
+  Upload, 
+  Image, 
+  Row, 
+  Col,
+  Card,
+  Typography,
+  Button,
+  Tooltip
+} from "antd";
+import { 
+  MdAdd, 
+  MdDelete, 
+  MdEdit,
+  MdSearch,
+  MdFilterList
+} from "react-icons/md";
 import MainPage from "../../component/layout/Mainpage";
 import { configStore } from "../../store/configStore";
+
+const { Title, Text } = Typography;
 
 const getBase64 = (file) =>
   new Promise((resolve, reject) => {
@@ -13,29 +39,82 @@ const getBase64 = (file) =>
     reader.onload = () => resolve(reader.result);
     reader.onerror = (error) => reject(error);
   });
+
 function ProductPage() {
     const { config } = configStore();
     const [form] = Form.useForm();
     const [state, setState] = useState({
         visibleModal: false,
-        Id : null,
-        Name:"",
-        Description:"",
-        Status:"",
-        ParentId:null,
-        txtSearch:"",
+        Id: null,
+        Name: "",
+        Description: "",
+        Status: "",
+        ParentId: null,
+        txtSearch: "",
         selectedCategory: null,
-        selectedBrand: null
+        selectedBrand: null,
+        products: [],
+        filteredProducts: [],
+        loading: false
     });
 
-    const [previewOpen, setPreviewOpen] =useState(false);
+    const [previewOpen, setPreviewOpen] = useState(false);
     const [previewImage, setPreviewImage] = useState("");
     const [imageDefault, setImageDefault] = useState([]);
     const [imageOptional, setImageOptional] = useState([]);
 
     useEffect(() => {
-        // getList();
+        getProducts();
     }, []);
+
+    useEffect(() => {
+        filterProducts();
+    }, [state.txtSearch, state.selectedCategory, state.selectedBrand, state.products]);
+
+    const filterProducts = () => {
+        let filtered = [...state.products];
+
+        if (state.txtSearch) {
+            const searchLower = state.txtSearch.toLowerCase();
+            filtered = filtered.filter(item => 
+                item.name.toLowerCase().includes(searchLower) ||
+                item.barcode.toLowerCase().includes(searchLower) ||
+                item.brand.toLowerCase().includes(searchLower)
+            );
+        }
+
+        if (state.selectedCategory) {
+            filtered = filtered.filter(item => 
+                item.category_id === state.selectedCategory
+            );
+        }
+
+        if (state.selectedBrand) {
+            filtered = filtered.filter(item => 
+                item.brand === state.selectedBrand
+            );
+        }
+
+        setState(prev => ({ ...prev, filteredProducts: filtered }));
+    };
+
+    const getProducts = async () => {
+        try {
+            setState(prev => ({ ...prev, loading: true }));
+            const res = await request("product", "get");
+            if (res && !res.error) {
+                setState(prev => ({ 
+                    ...prev, 
+                    products: res.list || [],
+                    filteredProducts: res.list || [],
+                    loading: false 
+                }));
+            }
+        } catch (error) {
+            message.error("Failed to fetch products");
+            setState(prev => ({ ...prev, loading: false }));
+        }
+    };
 
     const oncloseModal = () => {
         setState((p)=>({
@@ -45,26 +124,36 @@ function ProductPage() {
         form.resetFields();
     };
     const onFinish = async (items) => {
-         var params = new FormData();
-         params.append("name",items.name);
-         params.append("category_id",items.category_id);
-         params.append("barcode",items.barcode);
-         params.append("brand",items.brand);
-         params.append("description",items.description);
-         params.append("qty",items.qty);
-         params.append("price",items.price);
-         params.append("discount",items.discount);
-         params.append("status",items.status);
-        if (items.image_default?.file?.originFileObj) {
-            params.append("upload_image", items.image_default.file.originFileObj, items.image_default.file.name);
+        try {
+            const params = new FormData();
+            params.append("id", form.getFieldValue("id")); // Add ID for update
+            params.append("name", items.name);
+            params.append("category_id", items.category_id);
+            params.append("barcode", items.barcode);
+            params.append("brand", items.brand);
+            params.append("description", items.description);
+            params.append("qty", items.qty);
+            params.append("price", items.price);
+            params.append("discount", items.discount);
+            params.append("status", items.status);
+
+            if (items.image_default?.file?.originFileObj) {
+                params.append("upload_image", items.image_default.file.originFileObj, items.image_default.file.name);
+            }
+
+            const method = form.getFieldValue("id") ? "put" : "post";
+            const res = await request("product", method, params);
+            
+            if (res && !res.error) {
+                message.success(form.getFieldValue("id") ? "Product updated successfully" : "Product created successfully");
+                oncloseModal();
+                getProducts(); // Refresh the product list
+            } else {
+                message.error(res.error?.barcode || "Operation failed");
+            }
+        } catch (error) {
+            message.error("An error occurred during the operation");
         }
-         const res = await request("product", "post", params);
-         if (res && !res.error){
-            oncloseModal();
-         }
-         else{
-            res.error?.barcode && message.error(res.error?.barcode)
-         }
     };
     const onNewBtn = async () => {
         const res = await request ("new_barcode","post")
@@ -88,233 +177,324 @@ function ProductPage() {
   const handleChangeImageDefault= ({ fileList: newFileList }) => setImageDefault(newFileList);
   const handleChangeImageOptional= ({ fileList: newFileList }) => setImageOptional(newFileList);
 
-    return (
-        <MainPage loading ={false}>
-        
-        <div className="pageHeader">
-                <Space>
-                    <div>
-                    Product
-                    </div>
-                    <Input.Search 
-                    onChange={(value)=>
-                        setState(p=>({...p,txtSearch:value.target.value}))
-                        } 
-                        allowClear
-                        placeholder="Search"/>
+    const clickBtnEdit = (item) => {
+        form.setFieldsValue({
+            id: item.id,
+            name: item.name,
+            category_id: item.category_id,
+            barcode: item.barcode,
+            brand: item.brand,
+            description: item.description,
+            qty: item.qty,
+            price: item.price,
+            discount: item.discount,
+            status: item.status
+        });
+        setState(prev => ({
+            ...prev,
+            visibleModal: true
+        }));
+    };
 
-                <Select
-                    allowClear
-                    style={{width:130}}
-                    placeholder="Category"
-                    options={config.category}
-                    value={state.selectedCategory}
-                    onChange={(value) => setState(p => ({...p, selectedCategory: value}))}
-                />
-                <Select
-                    allowClear
-                    style={{width:130}}
-                    placeholder="Brand"
-                    options={config.brand}
-                    value={state.selectedBrand}
-                    onChange={(value) => setState(p => ({...p, selectedBrand: value}))}
-                />
-                <Button type="primary" onClick={() => {
-                    // Add your filter logic here
-                    console.log('Filtering with:', {
-                        search: state.txtSearch,
-                        category: state.selectedCategory,
-                        brand: state.selectedBrand
+    const clickBtnDelete = (item) => {
+        Modal.confirm({
+            title: "Delete Product",
+            content: "Are you sure you want to delete this product?",
+            okText: "Yes",
+            okType: "danger",
+            cancelText: "No",
+            onOk: async () => {
+                try {
+                    const res = await request("product", "delete", {
+                        id: item.id
                     });
-                }}>
-                    Filter
-                </Button>
+                    if (res && !res.error) {
+                        message.success("Product deleted successfully");
+                        getProducts(); // Refresh the product list
+                    } else {
+                        message.error(res.error || "Failed to delete product");
+                    }
+                } catch (error) {
+                    message.error("An error occurred while deleting the product");
+                }
+            }
+        });
+    };
+
+    return (
+        <MainPage loading={state.loading}>
+            <div className="pageHeader">
+                <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Title level={4} style={{ margin: 0 }}>Products</Title>
+                        <Button 
+                            type="primary" 
+                            icon={<MdAdd />} 
+                            onClick={onNewBtn}
+                            style={{ 
+                                background: 'linear-gradient(135deg, #1890ff 0%, #096dd9 100%)',
+                                border: 'none',
+                                boxShadow: '0 2px 8px rgba(24, 144, 255, 0.2)'
+                            }}
+                        >
+                            Add New Product
+                        </Button>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+                        <Input.Search 
+                            placeholder="Search products..."
+                            allowClear
+                            prefix={<MdSearch />}
+                            style={{ width: 300 }}
+                            value={state.txtSearch}
+                            onChange={(e) => setState(prev => ({ ...prev, txtSearch: e.target.value }))}
+                            onSearch={(value) => setState(prev => ({ ...prev, txtSearch: value }))}
+                        />
+                        <Select
+                            allowClear
+                            style={{ width: 200 }}
+                            placeholder="Category"
+                            options={config.category}
+                            value={state.selectedCategory}
+                            onChange={(value) => setState(prev => ({ ...prev, selectedCategory: value }))}
+                        />
+                        <Select
+                            allowClear
+                            style={{ width: 200 }}
+                            placeholder="Brand"
+                            options={config.brand}
+                            value={state.selectedBrand}
+                            onChange={(value) => setState(prev => ({ ...prev, selectedBrand: value }))}
+                        />
+                        <Button
+                            onClick={() => setState(prev => ({ ...prev, txtSearch: '', selectedCategory: null, selectedBrand: null }))}
+                            style={{ minWidth: 80 }}
+                        >
+                            Clear
+                        </Button>
+                    </div>
                 </Space>
-                
-                <Button type="primary" icon={<MdAdd />} onClick={onNewBtn}>
-                        New
-                </Button>
-                </div>
-        <Modal 
-            open={state.visibleModal}
-            title={form.getFieldValue("Id") ? "Edit Product" : "New Product"} 
-            footer={null} onCancel={oncloseModal}
-            width={700}
-            >
-            <Form form={form} layout="vertical" onFinish={onFinish}>
-                <Row gutter={10}>
-                    <Col span={12}>
-                        <Form.Item name="name" label="Product Name" 
-                            rules={[
-                                {
-                                    required:true,
-                                    message: "Please fill name product"
-                                }
+            </div>
+
+            <List
+                grid={{
+                    gutter: 16,
+                    xs: 1,
+                    sm: 2,
+                    md: 3,
+                    lg: 4,
+                    xl: 4,
+                    xxl: 4,
+                }}
+                dataSource={state.filteredProducts}
+                renderItem={(item) => (
+                    <List.Item>
+                        <Card
+                            hoverable
+                            cover={
+                                <div style={{ 
+                                    height: 200, 
+                                    overflow: 'hidden',
+                                    background: '#f5f5f5',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                }}>
+                                    {item.image ? (
+                                        <Image
+                                            alt={item.name}
+                                            src={`http://localhost/pos_img/${item.image}`}
+                                            style={{ 
+                                                width: '100%',
+                                                height: '100%',
+                                                objectFit: 'cover'
+                                            }}
+                                            preview={false}
+                                        />
+                                    ) : (
+                                        <Text type="secondary">No Image</Text>
+                                    )}
+                                </div>
+                            }
+                            actions={[
+                                <Tooltip title="Edit">
+                                    <Button 
+                                        type="text" 
+                                        icon={<MdEdit />} 
+                                        onClick={() => clickBtnEdit(item)}
+                                    />
+                                </Tooltip>,
+                                <Tooltip title="Delete">
+                                    <Button 
+                                        type="text" 
+                                        danger 
+                                        icon={<MdDelete />} 
+                                        onClick={() => clickBtnDelete(item)}
+                                    />
+                                </Tooltip>
                             ]}
-                        > 
-                        <Input placeholder="Input Product Name" />
-                        </Form.Item>
-
-                        <Form.Item name="brand" label="Brand"
-                            rules={[
-                                    {
-                                        required:true,
-                                        message: "Please select device brand"
-                                    }
-                                ]}> 
-                           <Select 
-                                placeholder="Select Brand"
-                                options={config.brand?.map((item) => ({
-                                    label: `${item.label} (${item.country})`,
-                                    value: item.value // Ensure "value" is correctly set
-                                }))}
+                        >
+                            <Card.Meta
+                                title={item.name}
+                                description={
+                                    <Space direction="vertical" size="small">
+                                        <Text type="secondary">Barcode: {item.barcode}</Text>
+                                        <Text type="secondary">Brand: {item.brand}</Text>
+                                        <Text type="secondary">Category: {item.category_name}</Text>
+                                        <Text strong>Price: ${item.price}</Text>
+                                        <Text>Stock: {item.qty}</Text>
+                                        <Tag color={item.status === 1 ? "green" : "red"}>
+                                            {item.status === 1 ? "Active" : "Inactive"}
+                                        </Tag>
+                                    </Space>
+                                }
                             />
+                        </Card>
+                    </List.Item>
+                )}
+            />
 
-                        </Form.Item>
-                        <Form.Item name="barcode" label="Barcode"> 
-                            <Input disabled placeholder="Barcode" style={{width:"100%"}}/>
-                        </Form.Item>
-                        <Form.Item name="qty" label="Quantity"> 
-                            <InputNumber placeholder="Input Quantity" style={{width:"100%"}}/>
-                        </Form.Item>
-                        <Form.Item name="discount" label="Discount"> 
-                            <InputNumber placeholder="Input Discount" style={{width:"100%"}}/>
-                        </Form.Item>
-                        
-                    </Col>
-                    <Col span={12}>
-                        <Form.Item name="category_id" label="Category"
-                            rules={[
+            <Modal 
+                open={state.visibleModal}
+                title={form.getFieldValue("Id") ? "Edit Product" : "New Product"} 
+                footer={null} 
+                onCancel={oncloseModal}
+                width={700}
+            >
+                <Form form={form} layout="vertical" onFinish={onFinish}>
+                    <Row gutter={10}>
+                        <Col span={12}>
+                            <Form.Item name="name" label="Product Name" 
+                                rules={[
                                     {
                                         required:true,
-                                        message: "Please select type device"
+                                        message: "Please fill name product"
                                     }
                                 ]}
                             > 
-                            <Select 
-                                placeholder="Select Category"
-                                options={config.category}
-                            />
-                        </Form.Item>
+                            <Input placeholder="Input Product Name" />
+                            </Form.Item>
 
-                        <Form.Item name="price" label="Price"> 
-                            <InputNumber placeholder="Input Price" style={{width:"100%"}}/>
-                        </Form.Item>
-                        <Form.Item name="status" label="Status" > 
-                            <Select 
-                                placeholder="Select Status"
-                                options={[
-                                {
-                                    label:"Active",
-                                    value: 1,
-                                },
-                                {
-                                    label:"Inactive",
-                                    value: 0,
-                                },
-                                ]}
-                            />
-                        </Form.Item>
-                        <Form.Item name="description" label="Description"> 
-                            <Input.TextArea placeholder="Input Description" />
-                        </Form.Item>
-                    </Col>
-                </Row>
+                            <Form.Item name="brand" label="Brand"
+                                rules={[
+                                        {
+                                            required:true,
+                                            message: "Please select device brand"
+                                        }
+                                    ]}> 
+                               <Select 
+                                    placeholder="Select Brand"
+                                    options={config.brand?.map((item) => ({
+                                        label: `${item.label} (${item.country})`,
+                                        value: item.value // Ensure "value" is correctly set
+                                    }))}
+                                />
 
-                
+                            </Form.Item>
+                            <Form.Item name="barcode" label="Barcode"> 
+                                <Input disabled placeholder="Barcode" style={{width:"100%"}}/>
+                            </Form.Item>
+                            <Form.Item name="qty" label="Quantity"> 
+                                <InputNumber placeholder="Input Quantity" style={{width:"100%"}}/>
+                            </Form.Item>
+                            <Form.Item name="discount" label="Discount"> 
+                                <InputNumber placeholder="Input Discount" style={{width:"100%"}}/>
+                            </Form.Item>
+                            
+                        </Col>
+                        <Col span={12}>
+                            <Form.Item name="category_id" label="Category"
+                                rules={[
+                                        {
+                                            required:true,
+                                            message: "Please select type device"
+                                        }
+                                    ]}
+                                > 
+                                <Select 
+                                    placeholder="Select Category"
+                                    options={config.category}
+                                />
+                            </Form.Item>
 
-                <Form.Item name="image_default" label="Image"> 
-                    <Upload
-                        customRequest={(options) => {
-                            options.onSuccess();
-                        }}
-                        listType="picture-card" 
-                        fileList={imageDefault}
-                        onPreview={handlePreview}
-                        onChange={handleChangeImageDefault}
-                    >
-                        <div>{<MdAdd />}</div>
-                    </Upload>
-                </Form.Item>
-                <Form.Item name="image_optional" label="Image (Optional)"> 
-                    <Upload 
-                        customRequest={(options) => {
-                            options.onSuccess();
-                        }}  
-                        listType="picture-card" 
-                        multiple={true} maxCount={5} 
-                        fileList={imageOptional}
-                        onPreview={handlePreview}
-                        onChange={handleChangeImageOptional}>
-                        <div>{<MdAdd />}</div>
-                    </Upload>
-                </Form.Item>
+                            <Form.Item name="price" label="Price"> 
+                                <InputNumber placeholder="Input Price" style={{width:"100%"}}/>
+                            </Form.Item>
+                            <Form.Item name="status" label="Status" > 
+                                <Select 
+                                    placeholder="Select Status"
+                                    options={[
+                                    {
+                                        label:"Active",
+                                        value: 1,
+                                    },
+                                    {
+                                        label:"Inactive",
+                                        value: 0,
+                                    },
+                                    ]}
+                                />
+                            </Form.Item>
+                            <Form.Item name="description" label="Description"> 
+                                <Input.TextArea placeholder="Input Description" />
+                            </Form.Item>
+                        </Col>
+                    </Row>
 
-                {previewImage && (
-                    <Image
-                        wrapperStyle={{
-                            display:"none",
-                        }}
-                        preview={{
-                            visible : previewOpen,
-                            onVisibleChange: (visible) => setPreviewOpen(visible),
-                            afterOpenChange: (visible) => !visible && setPreviewImage(""),
-                        }}
-                        src={previewImage}
-                    />
+                    
 
-                )}
-                <div style={{textAlign: "right"}}>
-                    <Space>
-                        <Button onClick={oncloseModal}>Cancel</Button>
-                        <Button type="primary" htmlType="submit" onClick={onFinish}>
-                        {form.getFieldValue("Id") ? "Update" : "Save"}
-                        </Button>
-                    </Space>
-                </div>
-            </Form>
-        </Modal>
-        {/* <Table
-            dataSource={List}
-            columns={[
-            {
-                key: "No",
-                title: "No",
-                render: (Item,data,index) => index + 1
-            },
-            {
-                key: "Name",
-                title: "Name",
-                dataIndex: "Name",
-            },
-            {
-                key: "Description",
-                title: "Description",
-                dataIndex: "Description",
-            },
-            {
-                key: "Status",
-                title: "Status",
-                dataIndex: "Status",
-                render : (status) => (status == 1? (
-                <Tag color="green">Active</Tag>
-                ) : (
-                <Tag color="red">InActive</Tag>) ),
-            },
-            {
-                key: "Action",
-                title: "Action",
-                align: "center",
-                render : (Item,data,index) => (
-                <Space>
-                    <Button type="primary" icon={<MdEdit/>}onClick={()=>onclickEdit(data,index)}/>
-                    <Button type="primary" danger icon={ <MdDelete/>}onClick={()=>onclickdelete(data,index)}/>
-                </Space>
+                    <Form.Item name="image_default" label="Image"> 
+                        <Upload
+                            customRequest={(options) => {
+                                options.onSuccess();
+                            }}
+                            listType="picture-card" 
+                            fileList={imageDefault}
+                            onPreview={handlePreview}
+                            onChange={handleChangeImageDefault}
+                        >
+                            <div>{<MdAdd />}</div>
+                        </Upload>
+                    </Form.Item>
+                    <Form.Item name="image_optional" label="Image (Optional)"> 
+                        <Upload 
+                            customRequest={(options) => {
+                                options.onSuccess();
+                            }}  
+                            listType="picture-card" 
+                            multiple={true} maxCount={5} 
+                            fileList={imageOptional}
+                            onPreview={handlePreview}
+                            onChange={handleChangeImageOptional}>
+                            <div>{<MdAdd />}</div>
+                        </Upload>
+                    </Form.Item>
 
-                )
-            },
-            ]}
-        /> */}
+                    {previewImage && (
+                        <Image
+                            wrapperStyle={{
+                                display:"none",
+                            }}
+                            preview={{
+                                visible : previewOpen,
+                                onVisibleChange: (visible) => setPreviewOpen(visible),
+                                afterOpenChange: (visible) => !visible && setPreviewImage(""),
+                            }}
+                            src={previewImage}
+                        />
+
+                    )}
+                    <div style={{textAlign: "right"}}>
+                        <Space>
+                            <Button onClick={oncloseModal}>Cancel</Button>
+                            <Button type="primary" htmlType="submit" onClick={onFinish}>
+                            {form.getFieldValue("Id") ? "Update" : "Save"}
+                            </Button>
+                        </Space>
+                    </div>
+                </Form>
+            </Modal>
         </MainPage>
     );
 }

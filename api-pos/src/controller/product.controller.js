@@ -3,15 +3,21 @@ const {db,isArray,isEmpty, logError} = require("../util/helper")
 
 exports.getList = async (req,res) => {
     try{
-       const [list] = await db.query("SELECT DISTINCT * FROM category ORDER BY Id DESC");
-       console.log("Fetched List:", list); 
-    res.json({
-        i_know_u:req.current_id,
-        list:list,
-    }); 
+        const sql = `
+            SELECT 
+                p.*,
+                c.Name as category_name,
+                c.Description as category_description
+            FROM product p
+            LEFT JOIN category c ON p.category_id = c.Id
+            ORDER BY p.id DESC
+        `;
+        const [list] = await db.query(sql);
+        res.json({
+            list: list,
+        }); 
     } catch (error){
         logError("product.getList", error,res);
-
     } 
 };
 
@@ -44,44 +50,57 @@ exports.create = async (req, res) => {
 };
 
 
-exports.update = async (req,res) => {
-    try{
-        if (await isExistBarcode(req.body.barcode)){
+exports.update = async (req, res) => {
+    try {
+        if (await isExistBarcode(req.body.barcode, req.body.id)) {
             res.json({
-                error : {
-                    barcode : "Barcode is already exist!"
+                error: {
+                    barcode: "Barcode is already exist!"
                 }
             });
             return false;
         }
-        // var [data] = await db.query("UPDATE category SET Name=:Name, Description=:Description, Status=:Status, ParentId=:ParentId WHERE Id = :Id", {
-        //     Id: req.body.Id,
-        //     Name: req.body.Name,
-        //     Description: req.body.Description,
-        //     Status: req.body.Status,
-        //     ParentId: req.body.ParentId,
-        // });
+
+        const sql = `
+            UPDATE product 
+            SET category_id = :category_id,
+                barcode = :barcode,
+                name = :name,
+                brand = :brand,
+                description = :description,
+                qty = :qty,
+                price = :price,
+                discount = :discount,
+                status = :status,
+                image = COALESCE(:image, image)
+            WHERE id = :id
+        `;
+
+        const [data] = await db.query(sql, {
+            ...req.body,
+            image: req.file?.filename
+        });
+
         res.json({
-        data: data, 
-        message : "Data Update Success!"
-    }); 
-    }catch(error){
-        logError("update.create", error,res);
+            data,
+            message: "Update Success!"
+        });
+    } catch (error) {
+        logError("product.update", error, res);
     }
 };
 
-exports.remove = async (req,res) => {
-    try{
-        
-        var [data] = await db.query("DELETE FROM category WHERE Id = :Id", {
-            Id: req.body.Id,
+exports.remove = async (req, res) => {
+    try {
+        const [data] = await db.query("DELETE FROM product WHERE id = :id", {
+            id: req.body.id
         });
         res.json({
-        data: data, 
-        message : "Data Delete Success!"
-    }); 
-    }catch(error){
-        logError("remove.create", error,res);
+            data: data,
+            message: "Product deleted successfully!"
+        });
+    } catch (error) {
+        logError("product.remove", error, res);
     }
 };
 
@@ -98,17 +117,20 @@ exports.newBarcode = async (req,res) => {
     }
 }; 
 
-isExistBarcode = async (barcode) => {
-   try{
-        var sql = "SELECT COUNT(id) AS Total FROM product WHERE barcode= :barcode";
-        var [data] = await db.query(sql,{
-            barcode:barcode,
-        });
-        if (data.length > 0 && data[0].Total > 0 ) {
-            return true;
+isExistBarcode = async (barcode, currentId = null) => {
+    try {
+        let sql = "SELECT COUNT(id) AS Total FROM product WHERE barcode = :barcode";
+        const params = { barcode: barcode };
+
+        if (currentId) {
+            sql += " AND id != :id";
+            params.id = currentId;
         }
+
+        const [data] = await db.query(sql, params);
+        return data.length > 0 && data[0].Total > 0;
+    } catch (error) {
+        logError("product.isExistBarcode", error);
         return false;
-    }catch(error){
-        logError("remove.create", error,res);
     }
 }; 
