@@ -40,3 +40,4 @@ Error: Cannot add or update a child row: a foreign key constraint fails (`pos`.`
 Error: Cannot add or update a child row: a foreign key constraint fails (`pos`.`product`, CONSTRAINT `product_ibfk_1` FOREIGN KEY (`category_id`) REFERENCES `category` (`Id`))
 Error: Cannot add or update a child row: a foreign key constraint fails (`pos`.`product`, CONSTRAINT `product_ibfk_1` FOREIGN KEY (`category_id`) REFERENCES `category` (`Id`))
 Error: Cannot add or update a child row: a foreign key constraint fails (`pos`.`product`, CONSTRAINT `product_ibfk_1` FOREIGN KEY (`category_id`) REFERENCES `category` (`Id`))
+Error: Cannot add or update a child row: a foreign key constraint fails (`pos`.`product`, CONSTRAINT `product_ibfk_1` FOREIGN KEY (`category_id`) REFERENCES `category` (`Id`))

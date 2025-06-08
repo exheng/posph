@@ -99,7 +99,10 @@ const PurchaseOrderReceipt = React.forwardRef(({ order }, ref) => {
                         dataIndex: 'price',
                         key: 'price',
                         align: 'right',
-                        render: (price) => `$${Number(price).toFixed(2)}`,
+                        render: (price) => {
+                            const numPrice = Number(price);
+                            return isNaN(numPrice) ? '$0.00' : `$${numPrice.toFixed(2)}`;
+                        }
                     },
                     {
                         title: 'Total',
