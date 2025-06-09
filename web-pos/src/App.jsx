@@ -41,7 +41,7 @@ function App() {
       <Route path="/supplier" element={<SupplierPage/>}/>
       <Route path="/pos" element={<PosPage/>}/>
       <Route path="/Product/Category1" element={<PurchasePage/>}/>
-      <Route path="/payment" element={<PaymentPage/>} />
+      <Route path="/pos/payment" element={<PaymentPage/>} />
       <Route path="/pos/customer-selection" element={<CustomerSelectionPage />} />
       <Route path="*" element={<h1>Route Not Found!!</h1>}/>
       </Route>

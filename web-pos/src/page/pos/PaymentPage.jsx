@@ -15,13 +15,26 @@ import {
     Divider,
     Table,
     Image,
-    Tooltip
+    Tooltip,
+    Steps,
+    Badge,
+    Tag
 } from 'antd';
-import { DollarOutlined, UserOutlined, PhoneOutlined, MailOutlined, EnvironmentOutlined } from '@ant-design/icons';
+import { 
+    DollarOutlined, 
+    UserOutlined, 
+    PhoneOutlined, 
+    MailOutlined, 
+    EnvironmentOutlined,
+    CreditCardOutlined,
+    MobileOutlined,
+    BankOutlined,
+    ArrowLeftOutlined
+} from '@ant-design/icons';
 import { request } from '../../util/helper';
 import MainPage from '../../component/layout/Mainpage';
 import { configStore } from '../../store/configStore';
-import { MdDelete } from "react-icons/md";
+import { MdDelete, MdReceipt, MdPrint, MdArrowBack } from "react-icons/md";
 
 const { Title, Text } = Typography;
 
@@ -38,41 +51,39 @@ function PaymentPage() {
         paymentAmount: 0,
         notes: ''
     });
+    const [currentStep, setCurrentStep] = useState(0);
 
     // Get cart data from navigation state
     const { cart = [], total = 0, subtotal = 0, discount = 0, customer: navigatedCustomer } = location.state || {};
 
     useEffect(() => {
-        // Check if we have cart data
         if (!cart || cart.length === 0) {
             message.error('No items in cart');
             navigate('/pos');
             return;
         }
 
-        // Set the customer from navigation state if available
+        // Set customer from navigation state
         if (navigatedCustomer) {
-            setSelectedCustomer(navigatedCustomer.id === 'walk-in' ? 'walk-in' : navigatedCustomer.id);
-            // Set initial customer data if it's a new customer or not 'walk-in'
-            if (navigatedCustomer.id !== 'walk-in' && navigatedCustomer.id) {
-                 // Find the customer in the fetched list or use navigated data
-                const foundCustomer = customers.find(c => c.id === navigatedCustomer.id);
-                setPaymentInfo(prev => ({ ...prev, customer: foundCustomer || navigatedCustomer }));
-            } else if (navigatedCustomer.id === 'walk-in') {
-                setPaymentInfo(prev => ({ ...prev, customer: { name: 'Walk-in Customer', id: 'walk-in' } }));
-            }
-
+            setPaymentInfo(prev => ({ 
+                ...prev, 
+                customer: navigatedCustomer
+            }));
+            // Set form value for customer
+            form.setFieldValue('customer', navigatedCustomer.name);
         }
 
-        // Initialize payment amount with total
+        // Set initial payment amount to total
+        const initialPaymentAmount = Number(total || 0);
         setPaymentInfo(prev => ({
             ...prev,
-            paymentAmount: Number(total || 0)
+            paymentAmount: initialPaymentAmount
         }));
+        // Set form value for payment amount
+        form.setFieldValue('paymentAmount', initialPaymentAmount);
 
-        // Fetch customers
         getCustomers();
-    }, [cart, total, navigatedCustomer]); // Add navigatedCustomer to dependency array
+    }, [cart, total, navigatedCustomer]);
 
     const getCustomers = async () => {
         try {
@@ -80,11 +91,8 @@ function PaymentPage() {
             const res = await request("customer", "get");
             if (res && !res.error) {
                 setCustomers(res.list || []);
-            } else {
-                message.error("Failed to fetch customers");
             }
         } catch (error) {
-            console.error("Error fetching customers:", error);
             message.error("Failed to fetch customers");
         } finally {
             setLoading(false);
@@ -127,18 +135,18 @@ function PaymentPage() {
             
             if (res && !res.error) {
                 message.success("Payment processed successfully!");
+                setCurrentStep(2);
                 // Navigate back to POS with cleared cart and order number
                 navigate('/pos', { 
                     state: { 
                         clearCart: true,
-                        orderNumber: res.data.order_number // Use res.data.order_number
+                        orderNumber: res.data.order_number
                     }
                 });
             } else {
                 message.error(res.error || "Failed to process payment");
             }
         } catch (error) {
-            console.error("Error processing payment:", error);
             message.error("An error occurred while processing payment");
         } finally {
             setLoading(false);
@@ -156,18 +164,23 @@ function PaymentPage() {
             key: 'name',
             render: (text, record) => (
                 <Space>
-                     <Image
-                        src={record.image ? `http://localhost:8081/pos_img/${record.image}` : 'default-product.png'} // Ensure correct image path
+                    <Image
+                        src={record.image ? `http://localhost:8081/pos_img/${record.image}` : 'default-product.png'}
                         alt={record.name}
                         style={{ 
                             width: '40px', 
                             height: '40px', 
                             objectFit: 'cover',
-                            borderRadius: '4px',
-                            boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                            borderRadius: '8px',
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
                         }}
                         preview={false}
                     />
+                    <div>
+                        <Text strong>{text}</Text>
+                        <br />
+                        <Text type="secondary" style={{ fontSize: '12px' }}>{record.barcode}</Text>
+                    </div>
                 </Space>
             )
         },
@@ -177,19 +190,30 @@ function PaymentPage() {
             key: 'quantity',
             width: 60,
             align: 'center',
+            render: (qty) => (
+                <Badge count={qty} style={{ backgroundColor: '#1890ff' }} />
+            )
         },
         {
             title: 'Price',
             dataIndex: 'price',
             key: 'price',
             align: 'right',
-            render: (price) => `$${Number(price || 0).toFixed(2)}`
+            render: (price) => (
+                <Text strong style={{ color: '#52c41a' }}>
+                    ${Number(price || 0).toFixed(2)}
+                </Text>
+            )
         },
         {
             title: 'Total',
             key: 'total',
             align: 'right',
-            render: (_, record) => `$${(Number(record.price || 0) * Number(record.quantity || 0)).toFixed(2)}`
+            render: (_, record) => (
+                <Text strong style={{ color: '#1890ff' }}>
+                    ${(Number(record.price || 0) * Number(record.quantity || 0)).toFixed(2)}
+                </Text>
+            )
         }
     ];
 
@@ -202,161 +226,237 @@ function PaymentPage() {
             <div className="pageHeader">
                 <Space direction="vertical" size="middle" style={{ width: '100%' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div>
+                        <Space>
+                            <Button 
+                                icon={<ArrowLeftOutlined />} 
+                                onClick={handleCancel}
+                                style={{ 
+                                    background: 'linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%)',
+                                    border: 'none',
+                                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+                                }}
+                            >
+                                Back
+                            </Button>
                             <Title level={4} style={{ margin: 0 }}>Payment</Title>
-                            <Text type="secondary">Process payment for your order</Text>
-                        </div>
+                        </Space>
                     </div>
                 </Space>
             </div>
 
+            <Steps
+                current={currentStep}
+                items={[
+                    {
+                        title: 'Customer',
+                        description: 'Select customer',
+                        icon: <UserOutlined />
+                    },
+                    {
+                        title: 'Payment',
+                        description: 'Process payment',
+                        icon: <DollarOutlined />
+                    },
+                    {
+                        title: 'Complete',
+                        description: 'Order completed',
+                        icon: <MdReceipt />
+                    }
+                ]}
+                style={{ marginBottom: 24 }}
+            />
+
             <Row gutter={24}>
-                <Col span={16}>
-                    <Card>
+                <Col span={14}>
+                    <Card 
+                        title={
+                            <Space>
+                                <DollarOutlined />
+                                <span>Payment Details</span>
+                            </Space>
+                        }
+                        style={{ marginBottom: 24 }}
+                    >
                         <Form
                             form={form}
                             layout="vertical"
+                            onFinish={handlePayment}
                             initialValues={{
-                                paymentMethod: paymentInfo.paymentMethod,
-                                paymentAmount: paymentInfo.paymentAmount,
-                                notes: paymentInfo.notes
-                            }}
-                            onValuesChange={(changedValues) => {
-                                setPaymentInfo(prev => ({
-                                    ...prev,
-                                    ...changedValues
-                                }));
+                                paymentMethod: 'cash',
+                                paymentAmount: total,
+                                customer: navigatedCustomer?.name || 'Walk-in Customer'
                             }}
                         >
-                            <Form.Item
-                                label="Customer"
-                                required
-                                tooltip="Select a customer or choose 'Walk-in Customer'"
-                            >
-                                <Select
-                                    placeholder="Select Customer"
-                                    value={selectedCustomer}
-                                    onChange={setSelectedCustomer}
-                                    options={[
-                                        { label: 'Walk-in Customer', value: 'walk-in' },
-                                        ...customers.map(customer => ({
-                                            label: customer.name,
-                                            value: customer.id
-                                        }))
-                                    ]}
-                                    showSearch
-                                    optionFilterProp="children"
-                                    filterOption={(input, option) =>
-                                        (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
-                                    }
-                                />
-                            </Form.Item>
+                            <Row gutter={16}>
+                                <Col span={12}>
+                                    <Form.Item
+                                        label="Customer"
+                                        name="customer"
+                                    >
+                                        <Input 
+                                            value={navigatedCustomer?.name || 'Walk-in Customer'} 
+                                            disabled 
+                                            style={{ 
+                                                background: '#f5f5f5',
+                                                cursor: 'not-allowed',
+                                                fontSize: '16px'
+                                            }}
+                                        />
+                                    </Form.Item>
+                                </Col>
+                                <Col span={12}>
+                                    <Form.Item
+                                        label="Payment Amount"
+                                        name="paymentAmount"
+                                        rules={[{ required: true, message: 'Please enter payment amount' }]}
+                                    >
+                                        <InputNumber
+                                            style={{ width: '100%' }}
+                                            formatter={value => `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                                            parser={value => value.replace(/\$\s?|(,*)/g, '')}
+                                            min={0}
+                                            onChange={(value) => setPaymentInfo(prev => ({ ...prev, paymentAmount: value }))}
+                                        />
+                                    </Form.Item>
+                                </Col>
+                            </Row>
 
                             <Form.Item
-                                name="paymentMethod"
                                 label="Payment Method"
-                                required
+                                name="paymentMethod"
+                                rules={[{ required: true, message: 'Please select a payment method' }]}
                             >
-                                <Select
-                                    options={[
-                                        { label: 'Cash', value: 'cash' },
-                                        { label: 'Credit Card', value: 'credit_card' },
-                                        { label: 'Mobile Payment', value: 'mobile_payment' }
-                                    ]}
-                                />
+                                <Row gutter={[16, 16]}>
+                                    <Col span={8}>
+                                        <Card
+                                            hoverable
+                                            style={{
+                                                border: paymentInfo.paymentMethod === 'cash' ? '2px solid #1890ff' : '1px solid #d9d9d9',
+                                                background: paymentInfo.paymentMethod === 'cash' ? '#e6f7ff' : 'white'
+                                            }}
+                                            onClick={() => {
+                                                setPaymentInfo(prev => ({ ...prev, paymentMethod: 'cash' }));
+                                                form.setFieldValue('paymentMethod', 'cash');
+                                            }}
+                                        >
+                                            <Space direction="vertical" align="center" style={{ width: '100%' }}>
+                                                <DollarOutlined style={{ fontSize: '24px', color: '#52c41a' }} />
+                                                <Text strong>Cash</Text>
+                                                <Text type="secondary" style={{ fontSize: '12px' }}>Pay with cash</Text>
+                                            </Space>
+                                        </Card>
+                                    </Col>
+                                    <Col span={8}>
+                                        <Card
+                                            hoverable
+                                            style={{
+                                                border: paymentInfo.paymentMethod === 'card' ? '2px solid #1890ff' : '1px solid #d9d9d9',
+                                                background: paymentInfo.paymentMethod === 'card' ? '#e6f7ff' : 'white'
+                                            }}
+                                            onClick={() => {
+                                                setPaymentInfo(prev => ({ ...prev, paymentMethod: 'card' }));
+                                                form.setFieldValue('paymentMethod', 'card');
+                                            }}
+                                        >
+                                            <Space direction="vertical" align="center" style={{ width: '100%' }}>
+                                                <CreditCardOutlined style={{ fontSize: '24px', color: '#1890ff' }} />
+                                                <Text strong>Card</Text>
+                                                <Text type="secondary" style={{ fontSize: '12px' }}>Credit/Debit card</Text>
+                                            </Space>
+                                        </Card>
+                                    </Col>
+                                    <Col span={8}>
+                                        <Card
+                                            hoverable
+                                            style={{
+                                                border: paymentInfo.paymentMethod === 'bank' ? '2px solid #1890ff' : '1px solid #d9d9d9',
+                                                background: paymentInfo.paymentMethod === 'bank' ? '#e6f7ff' : 'white'
+                                            }}
+                                            onClick={() => {
+                                                setPaymentInfo(prev => ({ ...prev, paymentMethod: 'bank' }));
+                                                form.setFieldValue('paymentMethod', 'bank');
+                                            }}
+                                        >
+                                            <Space direction="vertical" align="center" style={{ width: '100%' }}>
+                                                <BankOutlined style={{ fontSize: '24px', color: '#722ed1' }} />
+                                                <Text strong>Bank Transfer</Text>
+                                                <Text type="secondary" style={{ fontSize: '12px' }}>Bank transfer</Text>
+                                            </Space>
+                                        </Card>
+                                    </Col>
+                                </Row>
                             </Form.Item>
 
-                            <Form.Item
-                                name="paymentAmount"
-                                label="Payment Amount"
-                                required
-                                rules={[
-                                    {
-                                        required: true,
-                                        message: 'Please enter payment amount'
-                                    },
-                                    {
-                                        validator: (_, value) => {
-                                            const numValue = Number(value || 0);
-                                            if (numValue < total) {
-                                                return Promise.reject('Payment amount must be greater than or equal to total amount');
-                                            }
-                                            return Promise.resolve();
-                                        }
-                                    }
-                                ]}
-                            >
-                                <InputNumber
-                                    style={{ width: '100%' }}
-                                    min={Number(total || 0)}
-                                    step={0.01}
-                                    precision={2}
-                                    formatter={value => `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                                    parser={value => value.replace(/\$\s?|(,*)/g, '')}
-                                />
-                            </Form.Item>
-
-                            <Form.Item
-                                name="notes"
-                                label="Notes"
-                            >
-                                <Input.TextArea rows={4} placeholder="Enter any additional notes" />
-                            </Form.Item>
-
-                            <Form.Item style={{ marginBottom: 0 }}>
-                                <Space style={{ width: '100%', justifyContent: 'flex-end', paddingTop: '16px' }}>
-                                    <Button onClick={handleCancel}>Cancel</Button>
-                                    <Button type="primary" onClick={handlePayment} loading={loading}>
-                                        Complete Payment
-                                    </Button>
-                                </Space>
+                            <Form.Item>
+                                <Button
+                                    type="primary"
+                                    htmlType="submit"
+                                    block
+                                    size="large"
+                                    style={{
+                                        background: 'linear-gradient(135deg, #52c41a 0%, #389e0d 100%)',
+                                        border: 'none',
+                                        boxShadow: '0 2px 8px rgba(82, 196, 26, 0.2)'
+                                    }}
+                                >
+                                    Complete Payment
+                                </Button>
                             </Form.Item>
                         </Form>
                     </Card>
                 </Col>
 
-                <Col span={8}>
-                    <Card title="Order Summary" style={{ marginBottom: '24px' }}>
+                <Col span={10}>
+                    <Card 
+                        title={
+                            <Space>
+                                <MdReceipt />
+                                <span>Order Summary</span>
+                            </Space>
+                        }
+                        style={{ marginBottom: '24px' }}
+                    >
                         <Table
                             dataSource={cart}
                             columns={orderSummaryColumns}
                             pagination={false}
                             rowKey="id"
-                            size="small"
+                            size="middle"
+                            style={{ fontSize: '16px' }}
                             summary={() => (
                                 <Table.Summary.Row>
                                     <Table.Summary.Cell index={0} colSpan={3} align="right">
-                                        <Text strong>Subtotal:</Text>
+                                        <Text strong style={{ fontSize: '16px' }}>Subtotal:</Text>
                                     </Table.Summary.Cell>
                                     <Table.Summary.Cell index={1} align="right">
-                                        <Text strong>${Number(subtotal || 0).toFixed(2)}</Text>
+                                        <Text strong style={{ fontSize: '16px' }}>${Number(subtotal || 0).toFixed(2)}</Text>
                                     </Table.Summary.Cell>
                                 </Table.Summary.Row>
                             )}
                         />
-                        <Divider style={{ margin: '12px 0' }} />
-                        <Row justify="space-between" style={{ marginBottom: '8px' }}>
-                            <Col><Text>Discount:</Text></Col>
-                            <Col><Text>${Number(discount || 0).toFixed(2)}</Text></Col>
+                        <Divider style={{ margin: '16px 0' }} />
+                        <Row justify="space-between" style={{ marginBottom: '12px' }}>
+                            <Col><Text style={{ fontSize: '16px' }}>Discount:</Text></Col>
+                            <Col><Text type="danger" style={{ fontSize: '16px' }}>-${Number(discount || 0).toFixed(2)}</Text></Col>
                         </Row>
-                        <Row justify="space-between" style={{ marginBottom: '16px' }}>
-                            <Col><Title level={5} style={{ margin: 0 }}>Total:</Title></Col>
-                            <Col><Title level={5} style={{ margin: 0 }}>${Number(total || 0).toFixed(2)}</Title></Col>
+                        <Row justify="space-between" style={{ marginBottom: '20px' }}>
+                            <Col><Title level={4} style={{ margin: 0 }}>Total:</Title></Col>
+                            <Col><Title level={4} style={{ margin: 0, color: '#52c41a' }}>${Number(total || 0).toFixed(2)}</Title></Col>
                         </Row>
-                        <Divider style={{ margin: '12px 0' }} />
-                        <Row justify="space-between" style={{ marginBottom: '8px' }}>
-                            <Col><Text>Payment Amount:</Text></Col>
-                            <Col><Text>${Number(paymentInfo.paymentAmount || 0).toFixed(2)}</Text></Col>
+                        <Divider style={{ margin: '16px 0' }} />
+                        <Row justify="space-between" style={{ marginBottom: '12px' }}>
+                            <Col><Text style={{ fontSize: '16px' }}>Payment Amount:</Text></Col>
+                            <Col><Text strong style={{ fontSize: '16px' }}>${Number(paymentInfo.paymentAmount || 0).toFixed(2)}</Text></Col>
                         </Row>
-                        <Row justify="space-between" style={{ marginBottom: '8px' }}>
-                            <Col><Text strong>Change:</Text></Col>
+                        <Row justify="space-between" style={{ marginBottom: '12px' }}>
+                            <Col><Text strong style={{ fontSize: '16px' }}>Change:</Text></Col>
                             <Col>
-                                <Text strong>
+                                <Tag color="success" style={{ fontSize: '16px', padding: '4px 8px' }}>
                                     ${(Number(paymentInfo.paymentAmount || 0) - Number(total || 0)).toFixed(2)}
-                                </Text>
+                                </Tag>
                             </Col>
                         </Row>
-                    </Card>
+                    </Card>                  
                 </Col>
             </Row>
         </MainPage>

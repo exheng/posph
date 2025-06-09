@@ -146,10 +146,13 @@ function CustomerSelectionPage() {
         }
 
         // Navigate to payment page with customer data
-        navigate('/payment', {
+        navigate('/pos/payment', {
             state: {
-                ...location.state,
-                customer: state.selectedCustomer
+                customer: state.selectedCustomer,
+                cart: location.state.cart,
+                total: location.state.total,
+                subtotal: location.state.subtotal,
+                discount: location.state.discount
             }
         });
     };
@@ -219,22 +222,20 @@ function CustomerSelectionPage() {
             <div className="pageHeader">
                 <Space direction="vertical" size="middle" style={{ width: '100%' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div>
-                            <Title level={4} style={{ margin: 0 }}>Select Customer</Title>
-                            <Text type="secondary">Choose an existing customer or register a new one</Text>
-                        </div>
-                        <Button 
-                            type="primary"
-                            icon={<MdAdd />}
-                            onClick={showCreateModal}
-                            style={{ 
-                                background: 'linear-gradient(135deg, #1890ff 0%, #096dd9 100%)',
-                                border: 'none',
-                                boxShadow: '0 2px 8px rgba(24, 144, 255, 0.2)'
-                            }}
-                        >
-                            Register New Customer
-                        </Button>
+                        <Title level={4} style={{ margin: 0 }}>Select Customer</Title>
+                        <Space>
+                            <Button 
+                                type="primary"
+                                onClick={handleProceedToPayment}
+                                style={{
+                                    background: 'linear-gradient(135deg, #52c41a 0%, #389e0d 100%)',
+                                    border: 'none',
+                                    boxShadow: '0 2px 8px rgba(82, 196, 26, 0.2)'
+                                }}
+                            >
+                                Proceed to Payment
+                            </Button>
+                        </Space>
                     </div>
 
                     <Input.Search 
@@ -281,23 +282,6 @@ function CustomerSelectionPage() {
                     </Space>
                 </Card>
             )}
-
-            <div style={{ marginTop: 24, textAlign: 'right' }}>
-                <Button 
-                    type="primary"
-                    size="large"
-                    icon={<MdArrowForward />}
-                    onClick={handleProceedToPayment}
-                    disabled={!state.selectedCustomer}
-                    style={{ 
-                        background: 'linear-gradient(135deg, #52c41a 0%, #389e0d 100%)',
-                        border: 'none',
-                        boxShadow: '0 2px 8px rgba(82, 196, 26, 0.2)'
-                    }}
-                >
-                    Proceed to Payment
-                </Button>
-            </div>
 
             <Modal
                 title="Register New Customer"
