@@ -25,13 +25,19 @@ import PaymentPage from './page/pos/PaymentPage';
 import CustomerSelectionPage from './page/pos/CustomerSelectionPage';
 import ReceiptPage from './page/pos/ReceiptPage';
 import OrderListPage from './page/order/OrderListPage';
+import SalesReportPage from './page/report/SalesReportPage';
+import InventoryReportPage from './page/report/InventoryReportPage';
+import Performance from './page/report/PerformancePage';
+import PerformancePage from "./page/report/PerformancePage";
+import DashboardPage from "./page/dashboard/DashboardPage";
 
 function App() {
   return (
     <BrowserRouter>
     <Routes>
       <Route element={<MainLayout/>} >
-      <Route path="/" element={<HomePage/>}/>
+      <Route path="/" element={<DashboardPage/>}/>
+      <Route path="/home" element={<HomePage/>}/>
       <Route path="/employee" element={<EmployeePage/>}/>
       <Route path="/customer" element={<CostomerPage/>}/>
       <Route path="/category" element={<CategoryPage/>}/>
@@ -47,6 +53,9 @@ function App() {
       <Route path="/pos/customer-selection" element={<CustomerSelectionPage />} />
       <Route path="/pos/receipt" element={<ReceiptPage />} />
       <Route path="/order" element={<OrderListPage />} />
+      <Route path="/sales-report" element={<SalesReportPage />} />
+      <Route path="/inventory-report" element={<InventoryReportPage />} />
+      <Route path="/performance" element={<PerformancePage/>}/>
       <Route path="*" element={<h1>Route Not Found!!</h1>}/>
       </Route>
 
