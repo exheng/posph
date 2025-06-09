@@ -7,10 +7,10 @@ export const notificationStore = create((set) => ({
     addNotification: (notification) => set((state) => {
         // Check if this is a duplicate notification
         const isDuplicate = state.notifications.some(n => 
-            n.type === notification.type && 
-            n.details?.productName === notification.details?.productName &&
-            n.details?.supplier === notification.details?.supplier &&
-            n.details?.orderDate === notification.details?.orderDate
+            n.id === notification.id || // Check by notification ID
+            (n.type === notification.type && 
+             n.details?.productId === notification.details?.productId &&
+             !n.read) // Only consider unread notifications as duplicates
         );
 
         if (isDuplicate) {
@@ -18,7 +18,7 @@ export const notificationStore = create((set) => ({
         }
 
         const newNotification = {
-            id: Date.now(),
+            id: notification.id || Date.now(), // Use provided ID or generate new one
             timestamp: new Date().toISOString(),
             read: false,
             ...notification
@@ -59,7 +59,7 @@ export const notificationStore = create((set) => ({
     handleRealtimeUpdate: (data) => set((state) => {
         if (data.type === 'low_stock' || data.type === 'purchase_received') {
             const newNotification = {
-                id: Date.now(),
+                id: data.id || Date.now(), // Use provided ID or generate new one
                 timestamp: new Date().toISOString(),
                 read: false,
                 ...data
@@ -67,10 +67,10 @@ export const notificationStore = create((set) => ({
 
             // Check for duplicates before adding
             const isDuplicate = state.notifications.some(n => 
-                n.type === data.type && 
-                n.details?.productName === data.details?.productName &&
-                n.details?.supplier === data.details?.supplier &&
-                n.details?.orderDate === data.details?.orderDate
+                n.id === newNotification.id || // Check by notification ID
+                (n.type === data.type && 
+                 n.details?.productId === data.details?.productId &&
+                 !n.read) // Only consider unread notifications as duplicates
             );
 
             if (isDuplicate) {

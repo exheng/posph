@@ -72,7 +72,9 @@ function StockAlertPage() {
 
                 // Send notifications for newly low stock products
                 newlyLowStock.forEach(product => {
+                    const notificationId = `${product.id}_${Date.now()}`; // Create unique ID for each notification
                     handleRealtimeUpdate({
+                        id: notificationId, // Add unique ID
                         type: 'low_stock',
                         title: 'Low Stock Alert',
                         message: `${product.name} is running low on stock`,
@@ -81,7 +83,8 @@ function StockAlertPage() {
                             currentStock: product.qty,
                             category: product.category_name,
                             brand: product.brand,
-                            threshold: state.lowStockThreshold
+                            threshold: state.lowStockThreshold,
+                            productId: product.id // Add product ID to details
                         }
                     });
                     // Add to notified products set
