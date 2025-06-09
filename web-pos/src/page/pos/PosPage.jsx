@@ -138,6 +138,13 @@ function PosPage() {
     };
 
     const updateCartItemQuantity = (productId, newQuantity) => {
+        const product = state.products.find(p => p.id === productId);
+        
+        if (newQuantity > Number(product?.qty || 0)) {
+            message.warning(`Only ${product?.qty} items available in stock`);
+            return;
+        }
+
         if (newQuantity <= 0) {
             // Remove item from cart if quantity is 0 or less
             setState(prev => {
@@ -171,24 +178,29 @@ function PosPage() {
     };
 
     const addToCart = (product) => {
+        // Check if product has stock before adding to cart
+        if (Number(product.qty || 0) <= 0) {
+            message.warning("This product is out of stock");
+            return;
+        }
+
         setState(prev => {
             const existingItem = prev.cart.find(item => item.id === product.id);
             let updatedCart;
             
             if (existingItem) {
-                // If item exists, update quantity
+                // If item exists, check if adding one more would exceed stock
                 const newQuantity = existingItem.quantity + 1;
-                if (newQuantity <= 0) {
-                    // Remove item if new quantity would be 0 or less
-                    updatedCart = prev.cart.filter(item => item.id !== product.id);
-                } else {
-                    updatedCart = prev.cart.map(item => {
-                        if (item.id === product.id) {
-                            return { ...item, quantity: newQuantity };
-                        }
-                        return item;
-                    });
+                if (newQuantity > Number(product.qty)) {
+                    message.warning(`Only ${product.qty} items available in stock`);
+                    return prev;
                 }
+                updatedCart = prev.cart.map(item => {
+                    if (item.id === product.id) {
+                        return { ...item, quantity: newQuantity };
+                    }
+                    return item;
+                });
             } else {
                 // Add new item to cart
                 updatedCart = [...prev.cart, { ...product, quantity: 1 }];
@@ -286,7 +298,8 @@ function PosPage() {
             product.brand?.toLowerCase().includes(searchText) ||
             product.category_name?.toLowerCase().includes(searchText);
         const matchesCategory = !state.selectedCategory || product.category_id === state.selectedCategory;
-        return matchesSearch && matchesCategory;
+        const hasStock = Number(product.qty || 0) > 0;
+        return matchesSearch && matchesCategory && hasStock;
     });
 
     const filteredCustomers = customers.filter(customer =>

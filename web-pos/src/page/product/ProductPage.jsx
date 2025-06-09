@@ -153,6 +153,7 @@ function ProductPage() {
 
     const onFinish = async (items) => {
         try {
+            setState(prev => ({ ...prev, loading: true }));
             var params = new FormData();
             params.append("id", form.getFieldValue("id")); // Add ID for update
             params.append("name", items.name);
@@ -174,7 +175,7 @@ function ProductPage() {
             const res = await request("product", method, params);
             
             if (res && !res.error) {
-                message.success(res.message || "Operation successful!");
+                message.success(res.message || (method === "post" ? "Product created successfully!" : "Product updated successfully!"));
                 oncloseModal();
                 getProducts();
             } else {
@@ -182,6 +183,8 @@ function ProductPage() {
             }
         } catch (error) {
             message.error("An error occurred while saving the product");
+        } finally {
+            setState(prev => ({ ...prev, loading: false }));
         }
     };
 
@@ -237,12 +240,37 @@ function ProductPage() {
     const clickBtnDelete = (item) => {
         Modal.confirm({
             title: "Delete Product",
-            content: "Are you sure you want to delete this product?",
+            icon: <MdDelete style={{ color: '#ff4d4f' }} />,
+            content: (
+                <div>
+                    <p>Are you sure you want to delete this product?</p>
+                    <p><strong>Product:</strong> {item.name}</p>
+                    <p><strong>Barcode:</strong> {item.barcode}</p>
+                    <p><strong>Current Stock:</strong> {item.qty}</p>
+                    <p style={{ color: '#ff4d4f', marginTop: '8px' }}>
+                        This action cannot be undone.
+                    </p>
+                </div>
+            ),
+            okText: "Yes, Delete",
+            okType: "danger",
+            cancelText: "Cancel",
             onOk: async () => {
-                const res = await request("product", "delete", { id: item.id });
-                if (res && !res.error) {
-                    message.success(res.message || "Product deleted successfully!");
-                    getProducts();
+                try {
+                    setState(prev => ({ ...prev, loading: true }));
+                    const res = await request("product", "delete", { id: item.id });
+                    if (res && !res.error) {
+                        message.success("Product deleted successfully!");
+                        getProducts();
+                    } else {
+                        console.error("Delete error:", res.error);
+                        message.error("An error occurred while deleting the product");
+                    }
+                } catch (error) {
+                    console.error("Delete error:", error);
+                    message.error("An error occurred while deleting the product");
+                } finally {
+                    setState(prev => ({ ...prev, loading: false }));
                 }
             }
         });
@@ -348,15 +376,21 @@ function ProductPage() {
                                     <Button 
                                         type="text" 
                                         icon={<MdEdit />} 
-                                        onClick={() => clickBtnEdit(item)}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            clickBtnEdit(item);
+                                        }}
                                     />
                                 </Tooltip>,
                                 <Tooltip title="Delete">
                                     <Button 
                                         type="text" 
-                                        danger 
+                                        danger
                                         icon={<MdDelete />} 
-                                        onClick={() => clickBtnDelete(item)}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            clickBtnDelete(item);
+                                        }}
                                     />
                                 </Tooltip>
                             ]}

@@ -105,7 +105,7 @@ function CustomerSelectionPage() {
             
             const customerData = {
                 name: values.name,
-                phone: values.phone,
+                tel: values.tel,
                 email: values.email,
                 address: values.address
             };
@@ -189,7 +189,7 @@ function CustomerSelectionPage() {
                 <Space direction="vertical" size="small">
                     <Space>
                         <MdPhone size={16} />
-                        <Text>{record.phone || 'N/A'}</Text>
+                        <Text>{record.tel || 'N/A'}</Text>
                     </Space>
                     <Space>
                         <MdEmail size={16} />
@@ -213,7 +213,7 @@ function CustomerSelectionPage() {
 
     const filteredCustomers = state.customers.filter(customer =>
         customer.name?.toLowerCase().includes(state.searchText.toLowerCase()) ||
-        customer.phone?.toLowerCase().includes(state.searchText.toLowerCase()) ||
+        customer.tel?.toLowerCase().includes(state.searchText.toLowerCase()) ||
         customer.email?.toLowerCase().includes(state.searchText.toLowerCase())
     );
 
@@ -286,7 +286,7 @@ function CustomerSelectionPage() {
                         <Title level={5}>Selected Customer</Title>
                         <Space>
                             <Tag color="blue">Name: {state.selectedCustomer.name}</Tag>
-                            <Tag color="green">Phone: {state.selectedCustomer.phone}</Tag>
+                            <Tag color="green">Phone: {state.selectedCustomer.tel}</Tag>
                             {state.selectedCustomer.email && (
                                 <Tag color="purple">Email: {state.selectedCustomer.email}</Tag>
                             )}
@@ -315,7 +315,7 @@ function CustomerSelectionPage() {
                     </Form.Item>
 
                     <Form.Item
-                        name="phone"
+                        name="tel"
                         label="Phone Number"
                         rules={[
                             { required: true, message: 'Please enter phone number' },

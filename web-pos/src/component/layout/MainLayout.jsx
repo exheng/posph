@@ -24,6 +24,7 @@ import {
   GiftOutlined,
   TagsOutlined,
   UsergroupAddOutlined,
+  ShoppingOutlined,
 } from "@ant-design/icons";
 import { 
   Breadcrumb, 
@@ -51,6 +52,7 @@ import { configStore } from "../../store/configStore";
 import { notificationStore } from "../../store/notification.store";
 import NotificationPanel from "./NotificationPanel";
 import MessagePanel from "./MessagePanel";
+import { MdHistory } from "react-icons/md";
 
 const { Header, Content, Footer, Sider } = Layout;
 const { Text, Title } = Typography;
@@ -72,24 +74,11 @@ const items = [
     key: "customer",
     label: "Customers",
     icon: <CustomerServiceOutlined />,
-    children: [
-      {
-        key: "customer",
-        label: "Customer List",
-        icon: <TeamOutlined />,
-      },
-      {
-        key: "loyalty",
-        label: "Loyalty Program",
-        icon: <GiftOutlined />,
-      },
-    ],
   },
   {
     key: "order",
     label: "Orders",
-    icon: <FileTextOutlined />,
-    children: null,
+    icon: <ShoppingCartOutlined />,
   },
   {
     key: "inventory",
@@ -110,23 +99,6 @@ const items = [
         key: "stock-alerts",
         label: "Stock Alerts",
         icon: <BellOutlined />,
-      },
-    ],
-  },
-  {
-    key: "repairs",
-    label: "Repairs & Services",
-    icon: <ToolOutlined />,
-    children: [
-      {
-        key: "repair-requests",
-        label: "Repair Requests",
-        icon: <FileTextOutlined />,
-      },
-      {
-        key: "technicians",
-        label: "Technicians",
-        icon: <TeamOutlined />,
       },
     ],
   },

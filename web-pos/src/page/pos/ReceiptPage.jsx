@@ -8,7 +8,10 @@ import {
     Divider,
     Tag,
     message,
-    Modal
+    Modal,
+    Row,
+    Col,
+    Table
 } from 'antd';
 import { 
     MdPrint, 
@@ -17,7 +20,8 @@ import {
     MdPhone,
     MdEmail,
     MdLocationOn,
-    MdVisibility
+    MdVisibility,
+    MdDateRange
 } from "react-icons/md";
 import { request } from '../../util/helper';
 import MainPage from '../../component/layout/Mainpage';
@@ -236,6 +240,17 @@ function ReceiptPage() {
         };
     };
 
+    const formatDate = (dateString) => {
+        const date = new Date(dateString);
+        return date.toLocaleString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    };
+
     const ReceiptContent = () => (
         <div
             ref={receiptRef}
@@ -261,7 +276,7 @@ function ReceiptPage() {
                     <hr style={{ border: '1px solid #000', margin: '8px 0' }} />
                     <div style={{ color: '#000' }}>
                         <strong>Receipt No:</strong> {orderData.order_number}<br />
-                        <strong>Date:</strong> {new Date(orderData.created_at).toLocaleString()}<br />
+                        <strong>Date:</strong> {formatDate(orderData.created_at)}<br />
                         <strong>Customer:</strong> {orderData.customer_name || 'Walk-in Customer'}
                     </div>
                     <hr style={{ border: '1px solid #000', margin: '8px 0' }} />
@@ -339,15 +354,6 @@ function ReceiptPage() {
                             >
                                 Preview
                             </Button>
-                            {/* <Button
-                                type="primary"
-                                icon={<MdPrint />}
-                                onClick={handlePrint}
-                                disabled={!orderData}
-                                style={{ background: 'linear-gradient(135deg, #1890ff 0%, #096dd9 100%)', border: 'none' }}
-                            >
-                                Print Receipt
-                            </Button> */}
                             <Button
                                 type="default"
                                 icon={<MdPrint />}
@@ -419,19 +425,6 @@ function ReceiptPage() {
                 open={previewVisible}
                 onCancel={() => setPreviewVisible(false)}
                 footer={[
-                    // <Button 
-                    //     key="print-react" 
-                    //     type="primary" 
-                    //     onClick={() => {
-                    //         setPreviewVisible(false);
-                    //         setTimeout(() => {
-                    //             handlePrint();
-                    //         }, 100);
-                    //     }}
-                    //     icon={<MdPrint />}
-                    // >
-                    //     Print Receipt
-                    // </Button>,
                     <Button 
                         key="print-direct" 
                         type="default" 
