@@ -9,10 +9,16 @@ exports.create = async (req, res) => {
         await connection.beginTransaction();
 
         try {
+            // Generate order number
+            const [orderNumberResult] = await connection.query(
+                "SELECT CONCAT('ORD', DATE_FORMAT(NOW(), '%Y%m%d'), LPAD((SELECT COALESCE(MAX(id), 0) + 1 FROM orders), 4, '0')) as order_number"
+            );
+            const orderNumber = orderNumberResult[0].order_number;
+
             // Create order
             const [orderResult] = await connection.query(
-                "INSERT INTO orders (customer_id, total_amount, payment_method, payment_amount, change_amount, status, create_by) VALUES (?, ?, ?, ?, ?, 'completed', ?)",
-                [customer_id, total_amount, payment_method, payment_amount, change_amount, req.auth?.name]
+                "INSERT INTO orders (order_number, customer_id, total_amount, payment_method, payment_amount, change_amount, status, create_by) VALUES (?, ?, ?, ?, ?, ?, 'completed', ?)",
+                [orderNumber, customer_id, total_amount, payment_method, payment_amount, change_amount, req.auth?.name]
             );
 
             const orderId = orderResult.insertId;
@@ -44,17 +50,21 @@ exports.create = async (req, res) => {
             `, [orderId]);
 
             const [orderItems] = await connection.query(`
-                SELECT oi.*, p.name as product_name
+                SELECT oi.*, p.name as product_name, p.barcode, p.brand, c.Name as category_name
                 FROM order_items oi
                 LEFT JOIN product p ON oi.product_id = p.id
+                LEFT JOIN category c ON p.category_id = c.Id
                 WHERE oi.order_id = ?
             `, [orderId]);
 
             res.json({
                 message: "Order created successfully",
-                order: {
-                    ...order[0],
-                    items: orderItems
+                data: {
+                    order_number: orderNumber,
+                    order: {
+                        ...order[0],
+                        items: orderItems
+                    }
                 }
             });
 
@@ -68,6 +78,10 @@ exports.create = async (req, res) => {
 
     } catch (error) {
         logError("order.create", error, res);
+        res.status(500).json({
+            error: "Failed to create order",
+            details: error.message
+        });
     }
 };
 
@@ -80,10 +94,26 @@ exports.getList = async (req, res) => {
             ORDER BY o.id DESC
         `);
 
+        // Get items for each order
+        for (let order of orders) {
+            const [items] = await db.query(`
+                SELECT oi.*, p.name as product_name, p.barcode, p.brand, c.Name as category_name
+                FROM order_items oi
+                LEFT JOIN product p ON oi.product_id = p.id
+                LEFT JOIN category c ON p.category_id = c.Id
+                WHERE oi.order_id = ?
+            `, [order.id]);
+            order.items = items;
+        }
+
         res.json({
             list: orders
         });
     } catch (error) {
         logError("order.getList", error, res);
+        res.status(500).json({
+            error: "Failed to fetch orders",
+            details: error.message
+        });
     }
 }; 

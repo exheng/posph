@@ -279,8 +279,12 @@ function PosPage() {
     };
 
     const filteredProducts = state.products.filter(product => {
-        const matchesSearch = product.name.toLowerCase().includes(state.searchText.toLowerCase()) ||
-                            product.barcode.toLowerCase().includes(state.searchText.toLowerCase());
+        const searchText = state.searchText.toLowerCase();
+        const matchesSearch = 
+            product.name?.toLowerCase().includes(searchText) ||
+            product.barcode?.toLowerCase().includes(searchText) ||
+            product.brand?.toLowerCase().includes(searchText) ||
+            product.category_name?.toLowerCase().includes(searchText);
         const matchesCategory = !state.selectedCategory || product.category_id === state.selectedCategory;
         return matchesSearch && matchesCategory;
     });
@@ -382,13 +386,24 @@ function PosPage() {
                 <Row gutter={[24, 24]}>
                     <Col span={16}>
                         <Card>
-                            <div style={{ marginBottom: 16 }}>
+                            <div style={{ marginBottom: 16, display: 'flex', gap: '16px', alignItems: 'center' }}>
                                 <Input.Search
-                                    placeholder="Search products..."
+                                    placeholder="Search by name, barcode, brand, or category..."
                                     allowClear
                                     prefix={<MdSearch />}
-                                    style={{ width: 300 }}
+                                    style={{ width: 400 }}
                                     onChange={(e) => handleSearch(e.target.value)}
+                                    onSearch={handleSearch}
+                                />
+                                <Select
+                                    placeholder="Filter by category"
+                                    allowClear
+                                    style={{ width: 200 }}
+                                    onChange={handleCategoryChange}
+                                    options={config?.category?.map(cat => ({
+                                        label: cat.label,
+                                        value: cat.value
+                                    }))}
                                 />
                             </div>
                             <List
@@ -401,7 +416,7 @@ function PosPage() {
                                     xl: 4,
                                     xxl: 4,
                                 }}
-                                dataSource={state.products}
+                                dataSource={filteredProducts}
                                 renderItem={(item) => (
                                     <List.Item>
                                         <Card

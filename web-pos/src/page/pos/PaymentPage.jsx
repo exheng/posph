@@ -49,7 +49,9 @@ function PaymentPage() {
     const [paymentInfo, setPaymentInfo] = useState({
         paymentMethod: 'cash',
         paymentAmount: 0,
-        notes: ''
+        notes: '',
+        discount: 0,
+        discountPercent: 0
     });
     const [currentStep, setCurrentStep] = useState(0);
 
@@ -65,6 +67,7 @@ function PaymentPage() {
 
         // Set customer from navigation state
         if (navigatedCustomer) {
+            setSelectedCustomer(navigatedCustomer.id);
             setPaymentInfo(prev => ({ 
                 ...prev, 
                 customer: navigatedCustomer
@@ -75,12 +78,16 @@ function PaymentPage() {
 
         // Set initial payment amount to total
         const initialPaymentAmount = Number(total || 0);
+        const initialDiscountPercent = discount > 0 ? (discount / subtotal) * 100 : 0;
         setPaymentInfo(prev => ({
             ...prev,
-            paymentAmount: initialPaymentAmount
+            paymentAmount: initialPaymentAmount,
+            discount: Number(discount || 0),
+            discountPercent: initialDiscountPercent
         }));
-        // Set form value for payment amount
+        // Set form values
         form.setFieldValue('paymentAmount', initialPaymentAmount);
+        form.setFieldValue('discountPercent', initialDiscountPercent);
 
         getCustomers();
     }, [cart, total, navigatedCustomer]);
@@ -101,13 +108,12 @@ function PaymentPage() {
 
     const handlePayment = async () => {
         try {
-            if (!selectedCustomer) {
-                message.warning("Please select a customer");
-                return;
+            if (!selectedCustomer && navigatedCustomer) {
+                setSelectedCustomer(navigatedCustomer.id);
             }
 
             const finalPaymentAmount = Number(paymentInfo.paymentAmount || 0);
-            const finalTotal = Number(total || 0);
+            const finalTotal = Number(subtotal || 0) - Number(paymentInfo.discount || 0);
 
             if (finalPaymentAmount < finalTotal) {
                 message.warning("Payment amount must be greater than or equal to total amount");
@@ -117,7 +123,7 @@ function PaymentPage() {
             setLoading(true);
 
             const orderData = {
-                customer_id: selectedCustomer === 'walk-in' ? null : selectedCustomer,
+                customer_id: selectedCustomer,
                 items: cart.map(item => ({
                     product_id: item.id,
                     quantity: item.quantity,
@@ -128,7 +134,9 @@ function PaymentPage() {
                 payment_method: paymentInfo.paymentMethod,
                 payment_amount: finalPaymentAmount,
                 change_amount: finalPaymentAmount - finalTotal,
-                notes: paymentInfo.notes
+                notes: paymentInfo.notes,
+                discount: paymentInfo.discount,
+                discount_percent: paymentInfo.discountPercent
             };
 
             const res = await request("order", "post", orderData);
@@ -136,17 +144,22 @@ function PaymentPage() {
             if (res && !res.error) {
                 message.success("Payment processed successfully!");
                 setCurrentStep(2);
-                // Navigate back to POS with cleared cart and order number
-                navigate('/pos', { 
+                // Navigate to receipt page with order number
+                navigate('/pos/receipt', { 
                     state: { 
-                        clearCart: true,
-                        orderNumber: res.data.order_number
+                        orderNumber: res.data.order_number,
+                        orderData: {
+                            ...orderData,
+                            customer: navigatedCustomer,
+                            items: cart
+                        }
                     }
                 });
             } else {
                 message.error(res.error || "Failed to process payment");
             }
         } catch (error) {
+            console.error("Payment error:", error);
             message.error("An error occurred while processing payment");
         } finally {
             setLoading(false);
@@ -321,6 +334,47 @@ function PaymentPage() {
                                 </Col>
                             </Row>
 
+                            <Row gutter={16}>
+                                <Col span={12}>
+                                    <Form.Item
+                                        label="Discount (%)"
+                                        name="discountPercent"
+                                    >
+                                        <InputNumber
+                                            style={{ width: '100%' }}
+                                            formatter={value => `${value}%`}
+                                            parser={value => value.replace('%', '')}
+                                            min={0}
+                                            max={100}
+                                            onChange={(value) => {
+                                                const newDiscountPercent = Number(value || 0);
+                                                const newDiscount = (subtotal * newDiscountPercent) / 100;
+                                                const newTotal = subtotal - newDiscount;
+                                                setPaymentInfo(prev => ({ 
+                                                    ...prev, 
+                                                    discountPercent: newDiscountPercent,
+                                                    discount: newDiscount,
+                                                    paymentAmount: newTotal
+                                                }));
+                                                form.setFieldValue('paymentAmount', newTotal);
+                                            }}
+                                        />
+                                    </Form.Item>
+                                </Col>
+                                <Col span={12}>
+                                    <Form.Item
+                                        label="Notes"
+                                        name="notes"
+                                    >
+                                        <Input.TextArea 
+                                            rows={2}
+                                            placeholder="Add any notes for this payment"
+                                            onChange={(e) => setPaymentInfo(prev => ({ ...prev, notes: e.target.value }))}
+                                        />
+                                    </Form.Item>
+                                </Col>
+                            </Row>
+
                             <Form.Item
                                 label="Payment Method"
                                 name="paymentMethod"
@@ -436,12 +490,12 @@ function PaymentPage() {
                         />
                         <Divider style={{ margin: '16px 0' }} />
                         <Row justify="space-between" style={{ marginBottom: '12px' }}>
-                            <Col><Text style={{ fontSize: '16px' }}>Discount:</Text></Col>
-                            <Col><Text type="danger" style={{ fontSize: '16px' }}>-${Number(discount || 0).toFixed(2)}</Text></Col>
+                            <Col><Text style={{ fontSize: '16px' }}>Discount ({paymentInfo.discountPercent}%):</Text></Col>
+                            <Col><Text type="danger" style={{ fontSize: '16px' }}>-${Number(paymentInfo.discount || 0).toFixed(2)}</Text></Col>
                         </Row>
                         <Row justify="space-between" style={{ marginBottom: '20px' }}>
                             <Col><Title level={4} style={{ margin: 0 }}>Total:</Title></Col>
-                            <Col><Title level={4} style={{ margin: 0, color: '#52c41a' }}>${Number(total || 0).toFixed(2)}</Title></Col>
+                            <Col><Title level={4} style={{ margin: 0, color: '#52c41a' }}>${(Number(subtotal || 0) - Number(paymentInfo.discount || 0)).toFixed(2)}</Title></Col>
                         </Row>
                         <Divider style={{ margin: '16px 0' }} />
                         <Row justify="space-between" style={{ marginBottom: '12px' }}>

@@ -23,6 +23,7 @@ import PurchaseOrderPage from "./page/purchase/PurchaseOrderPage";
 import PosPage from "./page/pos/PosPage";
 import PaymentPage from './page/pos/PaymentPage';
 import CustomerSelectionPage from './page/pos/CustomerSelectionPage';
+import ReceiptPage from './page/pos/ReceiptPage';
 
 function App() {
   return (
@@ -43,6 +44,7 @@ function App() {
       <Route path="/Product/Category1" element={<PurchasePage/>}/>
       <Route path="/pos/payment" element={<PaymentPage/>} />
       <Route path="/pos/customer-selection" element={<CustomerSelectionPage />} />
+      <Route path="/pos/receipt" element={<ReceiptPage />} />
       <Route path="*" element={<h1>Route Not Found!!</h1>}/>
       </Route>
 

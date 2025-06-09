@@ -20,6 +20,7 @@ require("./src/route/supplier.route")(app);
 require("./src/route/purchase.route")(app);
 require("./src/route/config.route")(app);
 require("./src/route/customer.route")(app);
+require("./src/route/order.route")(app);
 
 app.listen(port, () => {
     console.log(`Server is running on port ${port}`);
