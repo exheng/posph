@@ -4,10 +4,12 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
 exports.getList = async (req, res) => {
+    let connection;
     try {
+        connection = await db.getConnection();
         let sql = "SELECT u.id, u.name, u.username, u.create_by, u.is_active, r.name AS role_name FROM user u INNER JOIN role r ON u.role_id = r.id";
-        const [list] = await db.query(sql);
-        const [role] = await db.query("SELECT id as value, name as label FROM role");
+        const [list] = await connection.query(sql);
+        const [role] = await connection.query("SELECT id as value, name as label FROM role");
         res.json({
             list,
             role,
@@ -15,6 +17,8 @@ exports.getList = async (req, res) => {
     } catch (error) {
         await logError("auth.getList", error);
         res.status(500).json({ error: "Failed to fetch users and roles", details: error.message });
+    } finally {
+        if (connection) connection.release();
     }
 };
 

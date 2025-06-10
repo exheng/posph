@@ -15,9 +15,9 @@ function UserPage() {
     },[]);
 
     const getList=async () =>{
-        const res = await request("auth/get-list", "get");
+        const res = await request("auth", "get");
         if (res && !res.error) {
-            setState((prv)=>({
+            setState((prv)=>({ 
                 ...prv,
                 list: res.list,
                 role: res.role,
