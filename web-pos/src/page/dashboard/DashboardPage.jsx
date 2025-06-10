@@ -31,6 +31,7 @@ import { Column, Line } from '@ant-design/plots';
 import { request } from '../../util/helper';
 import MainPage from '../../component/layout/Mainpage';
 import dayjs from 'dayjs';
+import { configStore } from '../../store/configStore'; // Import configStore
 
 const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
@@ -40,6 +41,8 @@ function DashboardPage() {
     const [loading, setLoading] = useState(false);
     const [dateRange, setDateRange] = useState([dayjs().subtract(7, 'day'), dayjs()]);
     const [timeRange, setTimeRange] = useState('week');
+    const { config } = configStore(); // Get config from store
+
     const [dashboardData, setDashboardData] = useState({
         summary: {
             totalSales: 0,
@@ -56,23 +59,52 @@ function DashboardPage() {
         dailySales: []
     });
 
+    // Helper function to get currency symbol
+    const getCurrencySymbol = () => {
+        switch (config.store?.currency) {
+            case 'USD': return '$';
+            case 'EUR': return '€';
+            case 'GBP': return '£';
+            case 'JPY': return '¥';
+            case 'AUD': return 'A$';
+            case 'CAD': return 'C$';
+            case 'CHF': return 'CHF';
+            case 'CNY': return '¥';
+            case 'SEK': return 'kr';
+            case 'NZD': return 'NZ$';
+            case 'SGD': return 'S$';
+            case 'HKD': return 'HK$';
+            default: return '$'; // Default to USD symbol
+        }
+    };
+
+    // Helper function to format currency based on exchange rate
+    const formatCurrency = (amountInStoreCurrency) => {
+        if (isNaN(amountInStoreCurrency)) return '0.00';
+        return Number(amountInStoreCurrency).toFixed(2);
+    };
+
     useEffect(() => {
         fetchDashboardData();
-    }, [dateRange, timeRange]);
+    }, [dateRange, timeRange, config.store?.currency, config.store?.exchange_rate_to_usd]);
 
     const fetchDashboardData = async () => {
         try {
             setLoading(true);
+            const exchangeRate = Number(config.store?.exchange_rate_to_usd || 1.0000); // Rate of (1 unit of selected currency) to USD
+
             // Fetch orders for summary and recent orders
             const ordersRes = await request("order", "get");
             if (ordersRes && !ordersRes.error) {
                 const orders = ordersRes.list || [];
                 
-                // Calculate summary data - Fix total sales calculation
+                // Calculate summary data - Convert all order amounts to the store's selected currency
                 const totalSales = orders.reduce((sum, order) => {
-                    // Ensure we're using the correct field for total amount
-                    const orderAmount = parseFloat(order.total_amount) || 0;
-                    return sum + orderAmount;
+                    const orderAmountInOrderCurrency = parseFloat(order.total_amount) || 0;
+                    const orderExchangeRate = parseFloat(order.exchange_rate_to_usd || 1.0000); // Order's original exchange rate to USD
+                    const amountInUSD = orderAmountInOrderCurrency / orderExchangeRate; // Convert order amount to USD
+                    const amountInStoreCurrency = amountInUSD * exchangeRate; // Convert USD to store currency
+                    return sum + amountInStoreCurrency;
                 }, 0);
                 
                 const totalOrders = orders.length;
@@ -87,37 +119,44 @@ function DashboardPage() {
                 );
 
                 const previousSales = previousPeriodOrders.reduce((sum, order) => {
-                    const orderAmount = parseFloat(order.total_amount) || 0;
-                    return sum + orderAmount;
+                    const orderAmountInOrderCurrency = parseFloat(order.total_amount) || 0;
+                    const orderExchangeRate = parseFloat(order.exchange_rate_to_usd || 1.0000);
+                    const amountInUSD = orderAmountInOrderCurrency / orderExchangeRate;
+                    const amountInStoreCurrency = amountInUSD * exchangeRate;
+                    return sum + amountInStoreCurrency;
                 }, 0);
                 
                 const currentSales = currentPeriodOrders.reduce((sum, order) => {
-                    const orderAmount = parseFloat(order.total_amount) || 0;
-                    return sum + orderAmount;
+                    const orderAmountInOrderCurrency = parseFloat(order.total_amount) || 0;
+                    const orderExchangeRate = parseFloat(order.exchange_rate_to_usd || 1.0000);
+                    const amountInUSD = orderAmountInOrderCurrency / orderExchangeRate;
+                    const amountInStoreCurrency = amountInUSD * exchangeRate;
+                    return sum + amountInStoreCurrency;
                 }, 0);
                 
                 const salesGrowth = previousSales ? ((currentSales - previousSales) / previousSales) * 100 : 0;
                 const ordersGrowth = previousPeriodOrders.length ? 
                     ((currentPeriodOrders.length - previousPeriodOrders.length) / previousPeriodOrders.length) * 100 : 0;
 
-                // Get recent orders
+                // Get recent orders (convert total_amount for display)
                 const recentOrders = orders
                     .sort((a, b) => dayjs(b.created_at).valueOf() - dayjs(a.created_at).valueOf())
                     .slice(0, 5)
                     .map(order => ({
                         ...order,
                         key: order.id,
-                        total_amount: parseFloat(order.total_amount) || 0 // Ensure amount is a number
+                        // Convert order's total_amount to store's current currency for display
+                        total_amount: (parseFloat(order.total_amount) || 0) / (parseFloat(order.exchange_rate_to_usd || 1.0000)) * exchangeRate
                     }));
 
                 // Prepare sales trend data
-                const dailySales = prepareSalesTrendData(orders);
+                const dailySales = prepareSalesTrendData(orders, exchangeRate);
 
                 setDashboardData(prev => ({
                     ...prev,
                     summary: {
                         ...prev.summary,
-                        totalSales,
+                        totalSales: parseFloat(totalSales.toFixed(2)),
                         totalOrders,
                         salesGrowth,
                         ordersGrowth
@@ -138,7 +177,9 @@ function DashboardPage() {
                     .slice(0, 5)
                     .map(product => ({
                         ...product,
-                        key: product.id
+                        key: product.id,
+                        // Convert product price to store's current currency for display
+                        price: (parseFloat(product.price) || 0) / (parseFloat(config.store?.exchange_rate_to_usd || 1.0000))
                     }));
 
                 // Get top products by quantity sold
@@ -147,7 +188,9 @@ function DashboardPage() {
                     .slice(0, 5)
                     .map(product => ({
                         ...product,
-                        key: product.id
+                        key: product.id,
+                        // Convert product price to store's current currency for display
+                        price: (parseFloat(product.price) || 0) / (parseFloat(config.store?.exchange_rate_to_usd || 1.0000))
                     }));
 
                 setDashboardData(prev => ({
@@ -180,7 +223,7 @@ function DashboardPage() {
         }
     };
 
-    const prepareSalesTrendData = (orders) => {
+    const prepareSalesTrendData = (orders, storeExchangeRate) => {
         const salesByDate = {};
         const startDate = dateRange[0];
         const endDate = dateRange[1];
@@ -192,12 +235,15 @@ function DashboardPage() {
             currentDate = currentDate.add(1, 'day');
         }
 
-        // Fill in actual sales data
+        // Fill in actual sales data, converting each order's amount to the store's current currency
         orders.forEach(order => {
             const orderDate = dayjs(order.created_at).format('YYYY-MM-DD');
             if (salesByDate[orderDate] !== undefined) {
-                const orderAmount = parseFloat(order.total_amount) || 0;
-                salesByDate[orderDate] += orderAmount;
+                const orderAmountInOrderCurrency = parseFloat(order.total_amount) || 0;
+                const orderExchangeRate = parseFloat(order.exchange_rate_to_usd || 1.0000);
+                const amountInUSD = orderAmountInOrderCurrency / orderExchangeRate;
+                const amountInStoreCurrency = amountInUSD * storeExchangeRate;
+                salesByDate[orderDate] += amountInStoreCurrency;
             }
         });
 
@@ -227,7 +273,7 @@ function DashboardPage() {
             key: 'total_amount',
             render: (amount) => (
                 <Text strong style={{ color: '#52c41a' }}>
-                    ${Number(amount).toFixed(2)}
+                    {getCurrencySymbol()}{formatCurrency(amount)}
                 </Text>
             )
         },
@@ -277,7 +323,7 @@ function DashboardPage() {
             key: 'price',
             render: (price) => (
                 <Text strong style={{ color: '#1890ff' }}>
-                    ${Number(price).toFixed(2)}
+                    {getCurrencySymbol()}{formatCurrency(price)}
                 </Text>
             )
         }
@@ -314,7 +360,7 @@ function DashboardPage() {
             key: 'price',
             render: (price) => (
                 <Text strong style={{ color: '#1890ff' }}>
-                    ${Number(price).toFixed(2)}
+                    {getCurrencySymbol()}{formatCurrency(price)}
                 </Text>
             )
         }
@@ -342,8 +388,12 @@ function DashboardPage() {
         },
         tooltip: {
             formatter: (datum) => {
-                return { name: 'Sales', value: '$' + datum.amount.toFixed(2) };
+                return { name: 'Sales', value: getCurrencySymbol() + formatCurrency(datum.amount) };
             },
+        },
+        style: { // Added style property as it was missing in the original columnConfig
+            borderRadius: 16,
+            boxShadow: '0 2px 8px rgba(24, 144, 255, 0.08)'
         },
     };
 
@@ -380,7 +430,7 @@ function DashboardPage() {
                             title="Total Sales"
                             value={dashboardData.summary.totalSales}
                             precision={2}
-                            prefix="$"
+                            prefix={getCurrencySymbol()}
                             valueStyle={{ color: '#3f8600' }}
                             prefix={<DollarOutlined />}
                         />

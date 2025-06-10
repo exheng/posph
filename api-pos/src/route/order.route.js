@@ -1,11 +1,9 @@
-const { 
-    create,
-    getList
-} = require("../controller/order.controller");
+const express = require("express");
+const router = express.Router();
+const orderController = require("../controller/order.controller");
+const { validate_token } = require("../middleware/validate_token.js");
 
-const { validate_token } = require("../controller/auth.controller");
+router.get("/", validate_token(), orderController.getList);
+router.post("/create", validate_token(), orderController.create);
 
-module.exports = (app) => {
-    app.post("/api/order", validate_token(), create);
-    app.get("/api/order", validate_token(), getList);
-}; 
+module.exports = router; 

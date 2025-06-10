@@ -46,6 +46,31 @@ function OrderListPage() {
         averageOrderValue: 0
     });
 
+    // Helper function to get currency symbol based on order currency
+    const getCurrencySymbol = (currencyCode) => {
+        switch (currencyCode) {
+            case 'USD': return '$';
+            case 'EUR': return '€';
+            case 'GBP': return '£';
+            case 'JPY': return '¥';
+            case 'AUD': return 'A$';
+            case 'CAD': return 'C$';
+            case 'CHF': return 'CHF';
+            case 'CNY': return '¥';
+            case 'SEK': return 'kr';
+            case 'NZD': return 'NZ$';
+            case 'SGD': return 'S$';
+            case 'HKD': return 'HK$';
+            default: return '$'; // Default to USD symbol
+        }
+    };
+
+    // Helper function to format currency for display
+    const formatCurrency = (amount) => {
+        if (isNaN(amount)) return '0.00';
+        return Number(amount).toFixed(2);
+    };
+
     useEffect(() => {
         getOrders();
     }, []);
@@ -53,6 +78,7 @@ function OrderListPage() {
     const getOrders = async () => {
         try {
             setLoading(true);
+            // Assuming the backend 'order/get' now returns currency and exchange_rate_to_usd
             const res = await request("order", "get");
             if (res && !res.error) {
                 setOrders(res.list || []);
@@ -67,13 +93,20 @@ function OrderListPage() {
 
     const calculateStats = (orderList) => {
         const totalOrders = orderList.length;
-        const totalRevenue = orderList.reduce((sum, order) => sum + Number(order.total_amount), 0);
-        const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+        
+        // Sum total revenue in a base currency (e.g., USD) then convert for display
+        const totalRevenueUSD = orderList.reduce((sum, order) => {
+            const amountInOrderCurrency = Number(order.total_amount);
+            const exchangeRate = Number(order.exchange_rate_to_usd || 1.0000);
+            return sum + (amountInOrderCurrency / exchangeRate);
+        }, 0);
+
+        const averageOrderValueUSD = totalOrders > 0 ? totalRevenueUSD / totalOrders : 0;
 
         setStats({
             totalOrders,
-            totalRevenue,
-            averageOrderValue
+            totalRevenue: totalRevenueUSD,
+            averageOrderValue: averageOrderValueUSD
         });
     };
 
@@ -154,7 +187,7 @@ function OrderListPage() {
                     </div>
                     
                     <div class="order-info">
-                        <p><strong>Date:</strong> ${dayjs(order.create_at).format('MMMM D, YYYY h:mm A')}</p>
+                        <p><strong>Date:</strong> ${dayjs(order.created_at).format('MMMM D, YYYY h:mm A')}</p>
                         <p><strong>Customer:</strong> ${order.customer_name || 'Walk-in Customer'}</p>
                         <p><strong>Payment Method:</strong> ${order.payment_method.toUpperCase()}</p>
                     </div>
@@ -173,18 +206,18 @@ function OrderListPage() {
                                 <tr>
                                     <td>${item.product_name}</td>
                                     <td>${item.quantity}</td>
-                                    <td>$${Number(item.price).toFixed(2)}</td>
-                                    <td>$${(Number(item.price) * Number(item.quantity)).toFixed(2)}</td>
+                                    <td>${getCurrencySymbol(order.currency)}${formatCurrency(Number(item.price))}</td>
+                                    <td>${getCurrencySymbol(order.currency)}${formatCurrency((Number(item.price) * Number(item.quantity)))}</td>
                                 </tr>
                             `).join('')}
                         </tbody>
                     </table>
 
                     <div class="total-section">
-                        <p><strong>Total Amount:</strong> $${Number(order.total_amount).toFixed(2)}</p>
+                        <p><strong>Total Amount:</strong> ${getCurrencySymbol(order.currency)}${formatCurrency(Number(order.total_amount))}</p>
                         ${order.payment_amount ? `
-                            <p><strong>Payment Amount:</strong> $${Number(order.payment_amount).toFixed(2)}</p>
-                            <p><strong>Change Amount:</strong> $${Number(order.change_amount).toFixed(2)}</p>
+                            <p><strong>Payment Amount:</strong> ${getCurrencySymbol(order.currency)}${formatCurrency(Number(order.payment_amount))}</p>
+                            <p><strong>Change Amount:</strong> ${getCurrencySymbol(order.currency)}${formatCurrency(Number(order.change_amount))}</p>
                         ` : ''}
                     </div>
 
@@ -244,23 +277,23 @@ function OrderListPage() {
         },
         {
             title: 'Date',
-            dataIndex: 'create_at',
-            key: 'create_at',
+            dataIndex: 'created_at',
+            key: 'created_at',
             render: (text) => (
                 <Space>
                     <CalendarOutlined />
                     <Text>{dayjs(text).format('MMM D, YYYY h:mm A')}</Text>
                 </Space>
             ),
-            sorter: (a, b) => dayjs(a.create_at).unix() - dayjs(b.create_at).unix()
+            sorter: (a, b) => dayjs(a.created_at).unix() - dayjs(b.created_at).unix()
         },
         {
             title: 'Total Amount',
             dataIndex: 'total_amount',
             key: 'total_amount',
-            render: (amount) => (
+            render: (amount, record) => (
                 <Text strong style={{ color: '#52c41a' }}>
-                    ${Number(amount).toFixed(2)}
+                    {getCurrencySymbol(record.currency)}{formatCurrency(Number(amount))}
                 </Text>
             ),
             sorter: (a, b) => Number(a.total_amount) - Number(b.total_amount)
@@ -316,8 +349,8 @@ function OrderListPage() {
             order.customer_name?.toLowerCase().includes(searchText.toLowerCase());
         
         const matchesDate = !dateRange || (
-            dayjs(order.create_at).isAfter(dateRange[0]) &&
-            dayjs(order.create_at).isBefore(dateRange[1])
+            dayjs(order.created_at).isAfter(dateRange[0]) &&
+            dayjs(order.created_at).isBefore(dateRange[1])
         );
 
         return matchesSearch && matchesDate;
@@ -364,7 +397,6 @@ function OrderListPage() {
                             value={stats.totalRevenue}
                             precision={2}
                             prefix="$"
-                            prefix={<DollarOutlined />}
                         />
                     </Card>
                 </Col>
@@ -375,7 +407,6 @@ function OrderListPage() {
                             value={stats.averageOrderValue}
                             precision={2}
                             prefix="$"
-                            prefix={<DollarOutlined />}
                         />
                     </Card>
                 </Col>
@@ -411,7 +442,7 @@ function OrderListPage() {
                                 {selectedOrder.customer_name || 'Walk-in Customer'}
                             </Descriptions.Item>
                             <Descriptions.Item label="Date">
-                                {dayjs(selectedOrder.create_at).format('MMM D, YYYY h:mm A')}
+                                {dayjs(selectedOrder.created_at).format('MMM D, YYYY h:mm A')}
                             </Descriptions.Item>
                             <Descriptions.Item label="Payment Method">
                                 <Tag color={getPaymentMethodColor(selectedOrder.payment_method)}>
@@ -445,14 +476,14 @@ function OrderListPage() {
                                     title: 'Price',
                                     dataIndex: 'price',
                                     key: 'price',
-                                    render: (price) => `$${Number(price).toFixed(2)}`,
+                                    render: (price) => `${getCurrencySymbol(selectedOrder.currency)}${formatCurrency(Number(price))}`,
                                     align: 'right'
                                 },
                                 {
                                     title: 'Total',
                                     key: 'total',
                                     render: (_, record) => 
-                                        `$${(Number(record.price) * Number(record.quantity)).toFixed(2)}`,
+                                        `${getCurrencySymbol(selectedOrder.currency)}${formatCurrency((Number(record.price) * Number(record.quantity)))}`,
                                     align: 'right'
                                 }
                             ]}
@@ -464,7 +495,7 @@ function OrderListPage() {
                                     </Table.Summary.Cell>
                                     <Table.Summary.Cell index={1} align="right">
                                         <Text strong style={{ color: '#52c41a' }}>
-                                            ${Number(selectedOrder.total_amount).toFixed(2)}
+                                            {getCurrencySymbol(selectedOrder.currency)}{formatCurrency(Number(selectedOrder.total_amount))}
                                         </Text>
                                     </Table.Summary.Cell>
                                 </Table.Summary.Row>

@@ -11,7 +11,8 @@ import {
     Modal,
     Row,
     Col,
-    Table
+    Table,
+    Image
 } from 'antd';
 import { 
     MdPrint, 
@@ -20,12 +21,12 @@ import {
     MdPhone,
     MdEmail,
     MdLocationOn,
-    MdVisibility,
-    MdDateRange
+    MdVisibility
 } from "react-icons/md";
-import { request } from '../../util/helper';
+import { request, getStoreLogoUrl } from '../../util/helper';
 import MainPage from '../../component/layout/Mainpage';
 import { useReactToPrint } from 'react-to-print';
+import { configStore } from '../../store/configStore';
 
 const { Title, Text } = Typography;
 
@@ -36,6 +37,32 @@ function ReceiptPage() {
     const [loading, setLoading] = useState(false);
     const [previewVisible, setPreviewVisible] = useState(false);
     const receiptRef = useRef();
+    const { config } = configStore();
+
+    // Helper function to get currency symbol based on order currency
+    const getCurrencySymbol = (currencyCode) => {
+        switch (currencyCode) {
+            case 'USD': return '$';
+            case 'EUR': return '€';
+            case 'GBP': return '£';
+            case 'JPY': return '¥';
+            case 'AUD': return 'A$';
+            case 'CAD': return 'C$';
+            case 'CHF': return 'CHF';
+            case 'CNY': return '¥';
+            case 'SEK': return 'kr';
+            case 'NZD': return 'NZ$';
+            case 'SGD': return 'S$';
+            case 'HKD': return 'HK$';
+            default: return '$'; // Default to USD symbol
+        }
+    };
+
+    // Helper function to format currency for display
+    const formatCurrency = (amount) => {
+        if (isNaN(amount)) return '0.00';
+        return Number(amount).toFixed(2);
+    };
 
     useEffect(() => {
         if (!location.state?.orderNumber) {
@@ -49,6 +76,7 @@ function ReceiptPage() {
     const getOrderDetails = async () => {
         try {
             setLoading(true);
+            // Assuming the backend 'order/get' now returns currency and exchange_rate_to_usd
             const res = await request("order", "get");
             if (res && !res.error) {
                 const order = res.list.find(o => o.order_number === location.state.orderNumber);
@@ -119,7 +147,6 @@ function ReceiptPage() {
         navigate('/pos');
     };
 
-    // Alternative print function using window.print()
     const handleDirectPrint = () => {
         if (!orderData) {
             message.error('No order data to print');
@@ -165,14 +192,22 @@ function ReceiptPage() {
                     th { font-weight: bold; }
                     .right { text-align: right; }
                     .small { font-size: 9px; color: #666; }
-                    .store-icon { font-size: 28px; }
+                    .store-logo { 
+                        max-width: 100px; 
+                        max-height: 100px; 
+                        margin: 0 auto; 
+                        display: block; 
+                    }
                     .contact-info { margin-top: 8px; font-size: 11px; }
                 </style>
             </head>
             <body>
                 <div class="center">
-                    <div class="store-icon">🏪</div>
-                    <div class="bold" style="font-size: 18px;">POS PH</div>
+                    ${config.store?.logo ? 
+                        `<img src="/uploads/${config.store.logo}" class="store-logo" alt="Store Logo" />` :
+                        `<div class="store-icon">🏪</div>`
+                    }
+                    <div class="bold" style="font-size: 18px;">${config.store?.name || 'POS PH'}</div>
                     <div style="color: #666; font-size: 11px;">Your Trusted Store</div>
                 </div>
                 <div class="divider"></div>
@@ -199,9 +234,9 @@ function ReceiptPage() {
                                     <div class="small">${item.barcode}</div>
                                 </td>
                                 <td class="center">${item.quantity}</td>
-                                <td class="right">$${Number(item.price).toFixed(2)}</td>
+                                <td class="right">${getCurrencySymbol(orderData.currency)}${formatCurrency(Number(item.price))}</td>
                                 <td class="right">
-                                    $${(Number(item.price) * Number(item.quantity) - Number(item.discount || 0)).toFixed(2)}
+                                    ${getCurrencySymbol(orderData.currency)}${formatCurrency((Number(item.price) * Number(item.quantity) - Number(item.discount || 0)))} 
                                 </td>
                             </tr>
                         `).join('') || ''}
@@ -209,19 +244,19 @@ function ReceiptPage() {
                 </table>
                 <div class="divider"></div>
                 <div>
-                    <div>Subtotal: $${Number(orderData.total_amount).toFixed(2)}</div>
+                    <div>Subtotal: ${getCurrencySymbol(orderData.currency)}${formatCurrency(Number(orderData.total_amount))}</div>
                     <div>Payment: ${orderData.payment_method?.toUpperCase()}</div>
-                    <div>Amount Paid: $${Number(orderData.payment_amount).toFixed(2)}</div>
-                    <div>Change: $${Number(orderData.change_amount || 0).toFixed(2)}</div>
+                    <div>Amount Paid: ${getCurrencySymbol(orderData.currency)}${formatCurrency(Number(orderData.payment_amount))}</div>
+                    <div>Change: ${getCurrencySymbol(orderData.currency)}${formatCurrency(Number(orderData.change_amount || 0))}</div>
                 </div>
                 <div class="divider"></div>
                 <div class="center contact-info">
                     Thank you for your purchase!<br />
                     Please come again.<br />
                     <div style="margin-top: 8px;">
-                        📞 +123 456 7890<br />
-                        ✉️ support@posph.com<br />
-                        📍 123 Store Street
+                        ${config.store?.phone ? `📞 ${config.store.phone}<br />` : ''}
+                        ${config.store?.email ? `✉️ ${config.store.email}<br />` : ''}
+                        ${config.store?.address ? `📍 ${config.store.address}` : ''}
                     </div>
                 </div>
             </body>
@@ -269,195 +304,262 @@ function ReceiptPage() {
             {orderData ? (
                 <>
                     <div style={{ textAlign: 'center', marginBottom: 16 }}>
-                        <MdStore style={{ fontSize: 28, color: '#000' }} />
-                        <div style={{ fontWeight: 'bold', fontSize: 18, color: '#000' }}>POS PH</div>
-                        <div style={{ color: '#666', fontSize: 11 }}>Your Trusted Store</div>
+                        {config.store?.logo ? (
+                            <Image
+                                src={`http://localhost:8081/pos_img/${config.store.logo}`}
+                                alt="Store Logo"
+                                style={{ maxWidth: '100px', maxHeight: '100px', marginBottom: '10px' }}
+                                preview={false}
+                            />
+                        ) : (
+                            <div style={{
+                                width: '100px',
+                                height: '100px',
+                                background: '#f0f0f0',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                borderRadius: '8px'
+                            }}>
+                                <MdStore style={{ fontSize: '48px', color: '#666' }} />
+                            </div>
+                        )}
+                        <div style={{ fontWeight: 'bold', fontSize: '18px', marginTop: '8px' }}>
+                            {config.store?.name || 'POS PH'}
+                        </div>
+                        <div style={{ color: '#666', fontSize: '11px' }}>
+                            Your Trusted Store
+                        </div>
                     </div>
-                    <hr style={{ border: '1px solid #000', margin: '8px 0' }} />
-                    <div style={{ color: '#000' }}>
-                        <strong>Receipt No:</strong> {orderData.order_number}<br />
-                        <strong>Date:</strong> {formatDate(orderData.created_at)}<br />
-                        <strong>Customer:</strong> {orderData.customer_name || 'Walk-in Customer'}
+
+                    <Divider style={{ margin: '16px 0' }} />
+
+                    <div style={{ marginBottom: '12px' }}>
+                        <Text strong>Receipt No:</Text> {orderData.order_number}<br />
+                        <Text strong>Date:</Text> {formatDate(orderData.created_at)}<br />
+                        <Text strong>Customer:</Text> {orderData.customer_name || 'Walk-in Customer'}
                     </div>
-                    <hr style={{ border: '1px solid #000', margin: '8px 0' }} />
-                    <table style={{ width: '100%', fontSize: 11, borderCollapse: 'collapse', color: '#000' }}>
-                        <thead>
-                            <tr>
-                                <th style={{ textAlign: 'left', fontWeight: 'bold' }}>Item</th>
-                                <th style={{ textAlign: 'center', fontWeight: 'bold' }}>Qty</th>
-                                <th style={{ textAlign: 'right', fontWeight: 'bold' }}>Price</th>
-                                <th style={{ textAlign: 'right', fontWeight: 'bold' }}>Total</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {orderData.items?.map(item => (
-                                <tr key={item.id}>
-                                    <td style={{ padding: '2px 0' }}>
-                                        {item.product_name}
-                                        <div style={{ fontSize: 9, color: '#666' }}>
-                                            {item.barcode}
-                                        </div>
-                                    </td>
-                                    <td style={{ textAlign: 'center', padding: '2px 0' }}>{item.quantity}</td>
-                                    <td style={{ textAlign: 'right', padding: '2px 0' }}>${Number(item.price).toFixed(2)}</td>
-                                    <td style={{ textAlign: 'right', padding: '2px 0' }}>
-                                        ${(Number(item.price) * Number(item.quantity) - Number(item.discount || 0)).toFixed(2)}
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                    <hr style={{ border: '1px solid #000', margin: '8px 0' }} />
-                    <div style={{ color: '#000' }}>
-                        <div>Subtotal: ${Number(orderData.total_amount).toFixed(2)}</div>
-                        <div>Payment: {orderData.payment_method?.toUpperCase()}</div>
-                        <div>Amount Paid: ${Number(orderData.payment_amount).toFixed(2)}</div>
-                        <div>Change: ${Number(orderData.change_amount || 0).toFixed(2)}</div>
+
+                    <Divider style={{ margin: '16px 0' }} />
+
+                    <Table
+                        dataSource={orderData.items}
+                        pagination={false}
+                        columns={[
+                            {
+                                title: 'Item',
+                                dataIndex: 'product_name',
+                                key: 'product_name',
+                                render: (text, record) => (
+                                    <Space direction="vertical" size={0}>
+                                        <Text strong>{text}</Text>
+                                        <Text type="secondary" style={{ fontSize: '11px' }}>{record.barcode}</Text>
+                                    </Space>
+                                )
+                            },
+                            {
+                                title: 'Qty',
+                                dataIndex: 'quantity',
+                                key: 'quantity',
+                                align: 'center',
+                                width: 50,
+                            },
+                            {
+                                title: 'Price',
+                                dataIndex: 'price',
+                                key: 'price',
+                                align: 'right',
+                                render: (price) => `${getCurrencySymbol(orderData.currency)}${formatCurrency(Number(price))}`,
+                                width: 80,
+                            },
+                            {
+                                title: 'Total',
+                                key: 'total',
+                                align: 'right',
+                                render: (_, record) => `${getCurrencySymbol(orderData.currency)}${formatCurrency((Number(record.price) * Number(record.quantity) - Number(record.discount || 0)))}`,
+                                width: 90,
+                            },
+                        ]}
+                        size="small"
+                        rowKey="product_id"
+                        summary={() => (
+                            <Table.Summary.Row>
+                                <Table.Summary.Cell index={0} colSpan={3} align="right">
+                                    <Text strong>Subtotal:</Text>
+                                </Table.Summary.Cell>
+                                <Table.Summary.Cell index={1} align="right">
+                                    <Text strong>
+                                        {getCurrencySymbol(orderData.currency)}{formatCurrency(Number(orderData.total_amount))}
+                                    </Text>
+                                </Table.Summary.Cell>
+                            </Table.Summary.Row>
+                        )}
+                        style={{ marginBottom: '16px' }}
+                    />
+
+                    <Divider style={{ margin: '16px 0' }} />
+
+                    <div style={{ marginBottom: '12px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <Text>Payment Method:</Text>
+                            <Text strong>{orderData.payment_method?.toUpperCase()}</Text>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <Text>Amount Paid:</Text>
+                            <Text strong>
+                                {getCurrencySymbol(orderData.currency)}{formatCurrency(Number(orderData.payment_amount))}
+                            </Text>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <Text>Change:</Text>
+                            <Text strong>
+                                {getCurrencySymbol(orderData.currency)}{formatCurrency(Number(orderData.change_amount || 0))}
+                            </Text>
+                        </div>
                     </div>
-                    <hr style={{ border: '1px solid #000', margin: '8px 0' }} />
-                    <div style={{ textAlign: 'center', marginTop: 12, fontSize: 11, color: '#000' }}>
-                        Thank you for your purchase!<br />
-                        Please come again.<br />
-                        <div style={{ marginTop: 8 }}>
-                            <MdPhone style={{ color: '#000', verticalAlign: 'middle' }} /> +123 456 7890<br />
-                            <MdEmail style={{ color: '#000', verticalAlign: 'middle' }} /> support@posph.com<br />
-                            <MdLocationOn style={{ color: '#000', verticalAlign: 'middle' }} /> 123 Store Street
+
+                    <Divider style={{ margin: '16px 0' }} />
+
+                    <div style={{ textAlign: 'center', fontSize: '11px', color: '#666' }}>
+                        <Text>Thank you for your purchase!</Text><br />
+                        <Text>Please come again.</Text><br />
+                        <div style={{ marginTop: '8px' }}>
+                            {config.store?.phone && (
+                                <Space size={4} style={{ marginBottom: '4px' }}>
+                                    <MdPhone /> <Text>{config.store.phone}</Text>
+                                </Space>
+                            )}
+                            {config.store?.email && (
+                                <Space size={4} style={{ marginBottom: '4px' }}>
+                                    <MdEmail /> <Text>{config.store.email}</Text>
+                                </Space>
+                            )}
+                            {config.store?.address && (
+                                <Space size={4}>
+                                    <MdLocationOn /> <Text>{config.store.address}</Text>
+                                </Space>
+                            )}
                         </div>
                     </div>
                 </>
             ) : (
-                <div>Loading receipt...</div>
+                <div style={{ textAlign: 'center', padding: '50px' }}>
+                    <Text type="secondary">Loading receipt data...</Text>
+                </div>
             )}
         </div>
     );
-
     return (
         <MainPage loading={loading}>
             <div className="pageHeader">
                 <Space direction="vertical" size="middle" style={{ width: '100%' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <Space>
-                            <Button 
-                                icon={<MdArrowBack />} 
+                            <Button
+                                icon={<MdArrowBack />}
                                 onClick={handleBack}
-                                style={{ background: 'linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%)', border: 'none' }}
+                                style={{
+                                    background: 'linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%)',
+                                    border: 'none',
+                                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+                                }}
                             >
-                                Back
+                                Back to POS
                             </Button>
-                            <Title level={4} style={{ margin: 0 }}>Receipt</Title>
-                        </Space>
-                        <Space>
-                            <Button
-                                icon={<MdVisibility />}
-                                onClick={() => setPreviewVisible(true)}
-                                disabled={!orderData}
-                            >
-                                Preview
-                            </Button>
-                            <Button
-                                type="default"
-                                icon={<MdPrint />}
-                                onClick={handleDirectPrint}
-                                disabled={!orderData}
-                                style={{ background: 'linear-gradient(135deg, #52c41a 0%, #389e0d 100%)', border: 'none', color: 'white' }}
-                            >
-                                Print
-                            </Button>
+                            <Title level={4} style={{ margin: 0 }}>Order Receipt</Title>
                         </Space>
                     </div>
                 </Space>
             </div>
 
-            {/* Hidden receipt for react-to-print */}
-            <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
-                <ReceiptContent />
-            </div>
-
-            <div style={{ padding: 24, background: 'white', marginTop: 24 }}>
-                <Card>
-                    {orderData ? (
-                        <Space direction="vertical" style={{ width: '100%' }}>
-                            <Title level={4}>Order Details</Title>
-                            <Text>Order Number: <Text strong>{orderData.order_number}</Text></Text>
-                            <Text>Customer: <Text strong>{orderData.customer_name || 'Walk-in Customer'}</Text></Text>
-                            <Text>Total Amount: <Text strong>${Number(orderData.total_amount).toFixed(2)}</Text></Text>
-                            <Text>Payment Method: <Tag color={orderData.payment_method === 'cash' ? 'green' : orderData.payment_method === 'card' ? 'blue' : 'purple'}>{orderData.payment_method?.toUpperCase()}</Tag></Text>
-                            <Text>Amount Paid: <Text strong>${Number(orderData.payment_amount).toFixed(2)}</Text></Text>
-                            <Text>Change: <Text strong>${Number(orderData.change_amount || 0).toFixed(2)}</Text></Text>
+            <Row gutter={[24, 24]} justify="center">
+                <Col xs={24} md={16} lg={12}>
+                    <Card
+                        actions={[
+                            <Button
+                                type="text"
+                                key="print"
+                                icon={<MdPrint />}
+                                onClick={handleDirectPrint}
+                                style={{ width: '100%' }}
+                            >
+                                Print Receipt (POS Printer)
+                            </Button>,
+                            <Button
+                                type="text"
+                                key="preview"
+                                icon={<MdVisibility />}
+                                onClick={() => setPreviewVisible(true)}
+                                style={{ width: '100%' }}
+                            >
+                                Preview & Print (A4)
+                            </Button>
+                        ]}
+                    >
+                        <div style={{ textAlign: 'center', padding: '24px' }}>
+                            <Title level={2} style={{ color: '#52c41a' }}>Payment Successful!</Title>
+                            <Text type="secondary" style={{ fontSize: '16px' }}>Your order has been processed.</Text>
                             <Divider />
-                            <Title level={5}>Items</Title>
-                            <table style={{ width: '100%', fontSize: 13, borderCollapse: 'collapse' }}>
-                                <thead>
-                                    <tr>
-                                        <th style={{ textAlign: 'left' }}>Item</th>
-                                        <th style={{ textAlign: 'center' }}>Qty</th>
-                                        <th style={{ textAlign: 'right' }}>Price</th>
-                                        <th style={{ textAlign: 'right' }}>Total</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {orderData.items?.map(item => (
-                                        <tr key={item.id}>
-                                            <td>
-                                                {item.product_name}
-                                                <div style={{ fontSize: 10, color: '#888' }}>
-                                                    Barcode: {item.barcode}
-                                                </div>
-                                            </td>
-                                            <td style={{ textAlign: 'center' }}>{item.quantity}</td>
-                                            <td style={{ textAlign: 'right' }}>${Number(item.price).toFixed(2)}</td>
-                                            <td style={{ textAlign: 'right' }}>
-                                                ${(Number(item.price) * Number(item.quantity) - Number(item.discount || 0)).toFixed(2)}
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </Space>
-                    ) : (
-                        <Text>Loading order details...</Text>
-                    )}
-                </Card>
-            </div>
+                            {orderData ? (
+                                <>
+                                    <Title level={4} style={{ margin: '0 0 16px 0' }}>Order #{orderData.order_number}</Title>
+                                    <div style={{ display: 'flex', justifyContent: 'space-around', flexWrap: 'wrap', gap: '16px' }}>
+                                        <div style={{ textAlign: 'center' }}>
+                                            <Text type="secondary" style={{ display: 'block' }}>Total Amount</Text>
+                                            <Title level={3} style={{ margin: 0, color: '#1890ff' }}>
+                                                {getCurrencySymbol(orderData.currency)}{formatCurrency(Number(orderData.total_amount))}
+                                            </Title>
+                                        </div>
+                                        <div style={{ textAlign: 'center' }}>
+                                            <Text type="secondary" style={{ display: 'block' }}>Amount Paid</Text>
+                                            <Title level={3} style={{ margin: 0 }}>
+                                                {getCurrencySymbol(orderData.currency)}{formatCurrency(Number(orderData.payment_amount))}
+                                            </Title>
+                                        </div>
+                                        <div style={{ textAlign: 'center' }}>
+                                            <Text type="secondary" style={{ display: 'block' }}>Change</Text>
+                                            <Title level={3} style={{ margin: 0, color: '#f5222d' }}>
+                                                {getCurrencySymbol(orderData.currency)}{formatCurrency(Number(orderData.change_amount || 0))}
+                                            </Title>
+                                        </div>
+                                    </div>
+                                    <Divider />
+                                    <Button
+                                        type="primary"
+                                        size="large"
+                                        onClick={handleBack}
+                                        style={{ marginTop: '24px' }}
+                                    >
+                                        New Sale
+                                    </Button>
+                                </>
+                            ) : (
+                                <Text>No order data available.</Text>
+                            )}
+                        </div>
+                    </Card>
+                </Col>
+            </Row>
 
             <Modal
                 title="Receipt Preview"
                 open={previewVisible}
                 onCancel={() => setPreviewVisible(false)}
+                width={700}
                 footer={[
-                    <Button 
-                        key="print-direct" 
-                        type="default" 
-                        onClick={() => {
-                            setPreviewVisible(false);
-                            setTimeout(() => {
-                                handleDirectPrint();
-                            }, 100);
-                        }}
-                        icon={<MdPrint />}
-                        style={{ background: '#52c41a', color: 'white', border: 'none' }}
-                    >
+                    <Button key="back" onClick={() => setPreviewVisible(false)}>
+                        Close
+                    </Button>,
+                    <Button key="print" type="primary" onClick={handlePrint}>
                         Print
                     </Button>,
-                    <Button key="close" onClick={() => setPreviewVisible(false)}>
-                        Close
-                    </Button>
                 ]}
-                width={400}
-                centered
             >
-                <div style={{ 
-                    background: '#f5f5f5', 
-                    padding: '20px', 
-                    borderRadius: '8px',
-                    display: 'flex',
-                    justifyContent: 'center'
-                }}>
-                    <ReceiptContent />
-                </div>
+                <ReceiptContent />
             </Modal>
         </MainPage>
     );
 }
 
 export default ReceiptPage;
+                                

@@ -117,7 +117,8 @@ function CustomerPage() {
             };
 
             const method = state.selectedCustomer ? 'put' : 'post';
-            const res = await request("customer", method, customerData);
+            const endpoint = state.selectedCustomer ? 'customer/update' : 'customer/create';
+            const res = await request(endpoint, method, customerData);
             
             if (res && !res.error) {
                 message.success(res.message || "Customer saved successfully!");

@@ -172,7 +172,8 @@ function ProductPage() {
             }
 
             const method = form.getFieldValue("id") ? "put" : "post";
-            const res = await request("product", method, params);
+            const endpoint = form.getFieldValue("id") ? "product/update" : "product/create";
+            const res = await request(endpoint, method, params);
             
             if (res && !res.error) {
                 message.success(res.message || (method === "post" ? "Product created successfully!" : "Product updated successfully!"));
@@ -189,13 +190,13 @@ function ProductPage() {
     };
 
     const onNewBtn = async () => {
-        const res = await request ("new_barcode","post")
-        if (res && !res.error){
-            form.setFieldValue("barcode", res.barcode)
-            setState((p)=>({
+        const res = await request("product/new_barcode", "post");
+        if (res && !res.error) {
+            form.setFieldValue("barcode", res.barcode);
+            setState((p) => ({
                 ...p,
-                visibleModal:true,
-            }))
+                visibleModal: true,
+            }));
         }
     };
 
@@ -309,7 +310,7 @@ function ProductPage() {
                             allowClear
                             style={{ width: 200 }}
                             placeholder="Category"
-                            options={config.category}
+                            options={config?.category || []}
                             value={state.selectedCategory}
                             onChange={(value) => setState(prev => ({ ...prev, selectedCategory: value }))}
                         />
@@ -317,7 +318,7 @@ function ProductPage() {
                             allowClear
                             style={{ width: 200 }}
                             placeholder="Brand"
-                            options={config.brand}
+                            options={config?.brand?.map((item) => ({ label: `${item.label} (${item.country})`, value: item.value })) || []}
                             value={state.selectedBrand}
                             onChange={(value) => setState(prev => ({ ...prev, selectedBrand: value }))}
                         />
@@ -473,7 +474,7 @@ function ProductPage() {
                                 > 
                                 <Select 
                                     placeholder="Select Category"
-                                    options={config.category}
+                                    options={config?.category}
                                 />
                             </Form.Item>
 
@@ -547,8 +548,8 @@ function ProductPage() {
                     <div style={{textAlign: "right"}}>
                         <Space>
                             <Button onClick={oncloseModal}>Cancel</Button>
-                            <Button type="primary" htmlType="submit" onClick={onFinish}>
-                            {form.getFieldValue("id") ? "Update" : "Save"}
+                            <Button type="primary" htmlType="submit">
+                                {form.getFieldValue("id") ? "Update" : "Save"}
                             </Button>
                         </Space>
                     </div>

@@ -1,15 +1,11 @@
-const { 
-    getList, 
-    create,
-    update,
-    remove
-} = require("../controller/customer.controller");
+const express = require("express");
+const router = express.Router();
+const customerController = require("../controller/customer.controller");
+const { validate_token } = require("../middleware/validate_token.js");
 
-const { validate_token } = require("../controller/auth.controller");
+router.get("/", validate_token(), customerController.getList);
+router.post("/create", validate_token(), customerController.create);
+router.post("/update", validate_token(), customerController.update);
+router.post("/remove", validate_token(), customerController.remove);
 
-module.exports = (app) => {
-    app.get("/api/customer", validate_token(), getList);
-    app.post("/api/customer", validate_token(), create);
-    app.put("/api/customer", validate_token(), update);
-    app.delete("/api/customer", validate_token(), remove);
-}; 
+module.exports = router; 

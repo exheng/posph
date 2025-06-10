@@ -110,7 +110,7 @@ function CustomerSelectionPage() {
                 address: values.address
             };
 
-            const res = await request("customer", "post", customerData);
+            const res = await request("customer/create", "post", customerData);
             
             if (res && !res.error) {
                 message.success(res.message || "Customer registered successfully!");

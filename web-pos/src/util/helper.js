@@ -3,7 +3,7 @@ import { Config } from "./config";
 import { setServerSatus } from "../store/server.store";
 import { getAccessToken } from "../store/profile.store";
 
-export const request = (url ="", method ="get",data ={}) =>{
+export const request = async (url ="", method ="get",data ={}) =>{
     var access_token = getAccessToken();
     var headers = { "Content-Type": "application/json"};
     if (data instanceof FormData) {
@@ -33,13 +33,20 @@ export const request = (url ="", method ="get",data ={}) =>{
           }
           setServerSatus(status);
           console.error(`API Error: Status ${status}, URL: ${err.config.url}, Method: ${err.config.method}`, response.data);
+          return { error: true, details: response.data };
         }
         else if(err.code =="ERR_NETWORK"){
           setServerSatus("error");
           console.error(`Network Error: URL: ${err.config.url}, Method: ${err.config.method}`, err.message);
+          return { error: true, details: err.message };
         }
         console.log(">>>",err);
-        return false;
+        return { error: true, details: "An unknown error occurred" };
       });
     
  };
+
+export const getStoreLogoUrl = (logo) => {
+    if (!logo) return null;
+    return `http://localhost:8081/pos_img/${logo}`;
+};

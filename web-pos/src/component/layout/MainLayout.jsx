@@ -47,7 +47,7 @@ import "./MainLayout.css";
 import logo from "../../assets/Shop-logo.png";
 import imguser from "../../assets/imguser.jpg";
 import { getProfile, setAccessToken, setProfile } from "../../store/profile.store";
-import { request } from "../../util/helper";
+import { request, getStoreLogoUrl } from "../../util/helper";
 import { configStore } from "../../store/configStore";
 import { notificationStore } from "../../store/notification.store";
 import NotificationPanel from "./NotificationPanel";
@@ -183,7 +183,7 @@ const items = [
 ];
 
 const MainLayout = () => {
-  const { setConfig } = configStore();
+  const { config, setConfig } = configStore();
   const { notifications } = notificationStore();
   const profile = getProfile();
   const [collapsed, setCollapsed] = useState(false);
@@ -205,6 +205,18 @@ const MainLayout = () => {
     initializeApp();
   }, []);
 
+  // Add event listener for config updates
+  useEffect(() => {
+    const handleConfigUpdate = () => {
+      getConfig();
+    };
+
+    window.addEventListener('configUpdated', handleConfigUpdate);
+    return () => {
+      window.removeEventListener('configUpdated', handleConfigUpdate);
+    };
+  }, []);
+
   const navigate = useNavigate();
   const onClickMenu = (item) => {
     navigate(item.key);
@@ -216,7 +228,7 @@ const MainLayout = () => {
       if (res && !res.error) {
         setConfig(res);
       } else {
-        console.error("Failed to load config:", res?.error);
+        console.error("Failed to load config:", res?.details || res?.error);
       }
     } catch (error) {
       console.error("Error loading config:", error);
@@ -224,8 +236,8 @@ const MainLayout = () => {
   };
 
   const onLogOut = () => {
-    setProfile();
-    setAccessToken();
+    setProfile(null);
+    setAccessToken(null);
     navigate("/login");
   };
 
@@ -284,7 +296,7 @@ const MainLayout = () => {
           }}
         >
           <img
-            src={logo}
+            src={config?.store?.logo ? getStoreLogoUrl(config.store.logo) : logo}
             alt="logo"
             style={{
               height: "40px",
@@ -292,11 +304,15 @@ const MainLayout = () => {
               objectFit: "contain",
               marginRight: collapsed ? 0 : "12px",
             }}
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = logo;
+            }}
           />
           {!collapsed && (
             <div>
               <Title level={4} style={{ color: "white", margin: 0, fontSize: "16px" }}>
-                PhoneShop POS
+                {config?.store?.name || "PhoneShop POS"}
               </Title>
               <Text style={{ color: "rgba(255, 255, 255, 0.65)", fontSize: "12px" }}>
                 Management System
@@ -353,7 +369,7 @@ const MainLayout = () => {
             
             <div>
               <Title level={3} style={{ margin: 0, color: "#1890ff", fontSize: "20px" }}>
-                PhoneShop POS
+                {config?.store?.name || "PhoneShop POS"}
               </Title>
               <Text style={{ color: "#8c8c8c", fontSize: "14px" }}>
                 Point of Sale Management System

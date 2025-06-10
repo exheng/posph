@@ -1,0 +1,9 @@
+Error: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near ''[object Object]', '[object Object]',
+                    exchange_rate_to_us...' at line 10
+Error: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near ''[object Object]', '[object Object]',
+                    exchange_rate_to_us...' at line 10
+Error: Unknown column 'fileList' in 'field list'
+Error: Unknown column 'fileList' in 'field list'
+Error: Unknown column 'fileList' in 'field list'
+Error: Unknown column 'fileList' in 'field list'
+Error: Unknown column 'fileList' in 'field list'

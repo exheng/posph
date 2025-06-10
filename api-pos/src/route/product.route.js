@@ -1,18 +1,13 @@
-const{ 
-    getList, 
-    create,
-    update,
-    remove, 
-    newBarcode
-   } = require("../controller/product.controller");
+const express = require("express");
+const router = express.Router();
+const productController = require("../controller/product.controller");
+const { validate_token } = require("../middleware/validate_token.js");
+const { uploadFile } = require("../util/helper.js");
 
-const { validate_token } = require("../controller/auth.controller");
-const { uploadFile } = require ("../util/helper")
+router.get("/", validate_token(), productController.getList);
+router.post("/create", validate_token(), uploadFile.single('upload_image'), productController.create);
+router.put("/update", validate_token(), uploadFile.single('upload_image'), productController.update);
+router.post("/remove", validate_token(), productController.remove);
+router.post("/new_barcode", validate_token(), productController.newBarcode);
 
-module.exports = (app) => {
-   app.get("/api/product",validate_token(), getList); 
-   app.post("/api/product",validate_token(),uploadFile.single("upload_image"),create); 
-   app.put("/api/product",validate_token(),update); 
-   app.delete("/api/product",validate_token(),remove); 
-   app.post("/api/new_barcode", validate_token(), newBarcode);
-};
+module.exports = router;

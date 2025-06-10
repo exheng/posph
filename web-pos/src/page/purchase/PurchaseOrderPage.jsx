@@ -335,7 +335,8 @@ function PurchaseOrderPage() {
             };
 
             const method = state.selectedOrder ? 'put' : 'post';
-            const res = await request("purchase", method, orderData);
+            const endpoint = state.selectedOrder ? "purchase/update" : "purchase/create";
+            const res = await request(endpoint, method, orderData);
             
             if (res && !res.error) {
                 // Add notification if order is marked as received

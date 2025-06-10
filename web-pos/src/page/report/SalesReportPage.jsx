@@ -3,21 +3,22 @@ import {
     Card,
     Row,
     Col,
-    DatePicker,
     Select,
     Table,
     Statistic,
     Typography,
     Space,
     Button,
+    DatePicker,
     Tag
 } from 'antd';
 import {
     DollarOutlined,
-    ShoppingOutlined,
-    ArrowUpOutlined,
-    ArrowDownOutlined,
-    DownloadOutlined
+    ShoppingCartOutlined,
+    RiseOutlined,
+    FallOutlined,
+    DownloadOutlined,
+    LineChartOutlined
 } from '@ant-design/icons';
 import { Line, Column } from '@ant-design/plots';
 import { request } from '../../util/helper';
@@ -29,144 +30,87 @@ const { RangePicker } = DatePicker;
 
 function SalesReportPage() {
     const [loading, setLoading] = useState(false);
-    const [dateRange, setDateRange] = useState([dayjs().subtract(30, 'days'), dayjs()]);
-    const [salesData, setSalesData] = useState([]);
+    const [orders, setOrders] = useState([]);
+    const [filteredOrders, setFilteredOrders] = useState([]);
+    const [dateRange, setDateRange] = useState(null);
     const [summary, setSummary] = useState({
         totalSales: 0,
         totalOrders: 0,
         averageOrderValue: 0,
-        salesGrowth: 0
+        growthRate: 0
     });
-    const [chartData, setChartData] = useState([]);
-    const [selectedPeriod, setSelectedPeriod] = useState('daily');
 
     useEffect(() => {
-        getSalesData();
-    }, [dateRange, selectedPeriod]);
+        getOrders();
+    }, []);
 
-    const getSalesData = async () => {
-        try {
-            setLoading(true);
-            const res = await request("order", "get");
-            if (res && !res.error) {
-                const filteredData = filterDataByDateRange(res.list || []);
-                processSalesData(filteredData);
-            }
-        } catch (error) {
-            console.error("Error fetching sales data:", error);
-        } finally {
-            setLoading(false);
+    useEffect(() => {
+        filterOrders();
+    }, [orders, dateRange]);
+
+    const getOrders = async () => {
+        setLoading(true);
+        const res = await request('order', 'get');
+        if (res && !res.error) {
+            setOrders(res.list || []);
         }
+        setLoading(false);
     };
 
-    const filterDataByDateRange = (data) => {
-        return data.filter(order => {
-            const orderDate = dayjs(order.create_at);
-            return orderDate.isAfter(dateRange[0]) && orderDate.isBefore(dateRange[1].add(1, 'day'));
-        });
+    const filterOrders = () => {
+        let filtered = orders;
+        if (dateRange) {
+            filtered = filtered.filter(order => {
+                const orderDate = dayjs(order.created_at);
+                return orderDate.isAfter(dateRange[0]) && orderDate.isBefore(dateRange[1]);
+            });
+        }
+        setFilteredOrders(filtered);
+        updateSummary(filtered);
     };
 
-    const processSalesData = (data) => {
-        // Calculate summary statistics
+    const updateSummary = (data) => {
         const totalSales = data.reduce((sum, order) => sum + Number(order.total_amount), 0);
         const totalOrders = data.length;
         const averageOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
 
-        // Calculate sales growth
-        const previousPeriodData = data.filter(order => 
-            dayjs(order.create_at).isBefore(dateRange[0])
-        );
-        const previousPeriodSales = previousPeriodData.reduce((sum, order) => 
-            sum + Number(order.total_amount), 0
-        );
-        const salesGrowth = previousPeriodSales > 0 
-            ? ((totalSales - previousPeriodSales) / previousPeriodSales) * 100 
+        // Calculate growth rate (comparing with previous period)
+        const currentPeriodSales = totalSales;
+        const previousPeriodSales = orders
+            .filter(order => {
+                const orderDate = dayjs(order.created_at);
+                const previousStart = dateRange ? dateRange[0].subtract(dateRange[1].diff(dateRange[0])) : dayjs().subtract(30, 'days');
+                const previousEnd = dateRange ? dateRange[0] : dayjs();
+                return orderDate.isAfter(previousStart) && orderDate.isBefore(previousEnd);
+            })
+            .reduce((sum, order) => sum + Number(order.total_amount), 0);
+
+        const growthRate = previousPeriodSales > 0 
+            ? ((currentPeriodSales - previousPeriodSales) / previousPeriodSales) * 100 
             : 0;
 
         setSummary({
             totalSales,
             totalOrders,
             averageOrderValue,
-            salesGrowth
+            growthRate
         });
-
-        // Process data for charts
-        const chartData = processChartData(data);
-        setChartData(chartData);
     };
-
-    const processChartData = (data) => {
-        const groupedData = {};
-        
-        data.forEach(order => {
-            const date = dayjs(order.create_at);
-            let key;
-            
-            switch (selectedPeriod) {
-                case 'daily':
-                    key = date.format('YYYY-MM-DD');
-                    break;
-                case 'weekly':
-                    key = date.format('YYYY-[W]WW');
-                    break;
-                case 'monthly':
-                    key = date.format('YYYY-MM');
-                    break;
-                default:
-                    key = date.format('YYYY-MM-DD');
-            }
-
-            if (!groupedData[key]) {
-                groupedData[key] = {
-                    date: key,
-                    sales: 0,
-                    orders: 0
-                };
-            }
-
-            groupedData[key].sales += Number(order.total_amount);
-            groupedData[key].orders += 1;
-        });
-
-        return Object.values(groupedData).sort((a, b) => a.date.localeCompare(b.date));
-    };
-
-    const columns = [
-        {
-            title: 'Date',
-            dataIndex: 'date',
-            key: 'date',
-            render: (text) => dayjs(text).format('MMMM D, YYYY')
-        },
-        {
-            title: 'Orders',
-            dataIndex: 'orders',
-            key: 'orders',
-            sorter: (a, b) => a.orders - b.orders,
-            render: (val) => <Tag color="blue" style={{ fontSize: 15 }}>{val}</Tag>
-        },
-        {
-            title: 'Sales',
-            dataIndex: 'sales',
-            key: 'sales',
-            render: (text) => <Text strong style={{ color: '#52c41a', fontSize: 16 }}>${Number(text).toFixed(2)}</Text>,
-            sorter: (a, b) => a.sales - b.sales
-        }
-    ];
 
     const exportToCSV = () => {
-        const headers = ['Date', 'Orders', 'Sales'];
-        const csvData = chartData.map(item => [
-            dayjs(item.date).format('YYYY-MM-DD'),
-            item.orders,
-            item.sales
+        const headers = ['Order Number', 'Date', 'Customer', 'Items', 'Total Amount', 'Payment Method'];
+        const csvData = filteredOrders.map(order => [
+            order.order_number,
+            dayjs(order.created_at).format('YYYY-MM-DD HH:mm:ss'),
+            order.customer_name || 'Walk-in Customer',
+            order.items.length,
+            order.total_amount,
+            order.payment_method
         ]);
-
         const csvContent = [
             headers.join(','),
             ...csvData.map(row => row.join(','))
         ].join('\n');
-
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
@@ -174,85 +118,120 @@ function SalesReportPage() {
         link.click();
     };
 
-    // Modern chart config for Column Chart (Vertical Bar)
-    const colorPalette = [
-        '#6EC6FF', '#A5D6A7', '#FFD54F', '#FF8A65', '#BA68C8',
-        '#90CAF9', '#FFB74D', '#81C784', '#E57373', '#4DB6AC'
+    const columns = [
+        {
+            title: 'Order Number',
+            dataIndex: 'order_number',
+            key: 'order_number',
+            render: (text) => <Text strong style={{ fontSize: 16 }}>{text}</Text>
+        },
+        {
+            title: 'Date',
+            dataIndex: 'created_at',
+            key: 'created_at',
+            render: (text) => <Text>{dayjs(text).format('MMM D, YYYY h:mm A')}</Text>,
+            sorter: (a, b) => dayjs(a.created_at).unix() - dayjs(b.created_at).unix()
+        },
+        {
+            title: 'Customer',
+            dataIndex: 'customer_name',
+            key: 'customer_name',
+            render: (text) => <Tag color="blue" style={{ fontSize: 14 }}>{text || 'Walk-in Customer'}</Tag>
+        },
+        {
+            title: 'Items',
+            dataIndex: 'items',
+            key: 'items',
+            render: (items) => <Text>{items.length}</Text>,
+            sorter: (a, b) => a.items.length - b.items.length
+        },
+        {
+            title: 'Total Amount',
+            dataIndex: 'total_amount',
+            key: 'total_amount',
+            render: (amount) => (
+                <Text strong style={{ color: '#52c41a', fontSize: 16 }}>
+                    ${Number(amount).toFixed(2)}
+                </Text>
+            ),
+            sorter: (a, b) => Number(a.total_amount) - Number(b.total_amount)
+        },
+        {
+            title: 'Payment Method',
+            dataIndex: 'payment_method',
+            key: 'payment_method',
+            render: (method) => (
+                <Tag color={method === 'cash' ? 'green' : method === 'card' ? 'blue' : 'purple'} style={{ fontSize: 14 }}>
+                    {method.toUpperCase()}
+                </Tag>
+            )
+        }
     ];
-    const columnConfig = {
+
+    // Prepare data for sales trend chart
+    const salesTrendData = filteredOrders.reduce((acc, order) => {
+        const date = dayjs(order.created_at).format('YYYY-MM-DD');
+        if (!acc[date]) {
+            acc[date] = 0;
+        }
+        acc[date] += Number(order.total_amount);
+        return acc;
+    }, {});
+
+    const chartData = Object.entries(salesTrendData).map(([date, amount]) => ({
+        date,
+        amount
+    })).sort((a, b) => dayjs(a.date).unix() - dayjs(b.date).unix());
+
+    const lineConfig = {
         data: chartData,
         xField: 'date',
-        yField: 'sales',
-        seriesField: 'date',
-        legend: false,
-        columnWidthRatio: 0.5,
-        columnStyle: {
-            radius: [12, 12, 0, 0],
-            fillOpacity: 0.95,
-            shadowColor: '#e3e3e3',
-            shadowBlur: 6,
+        yField: 'amount',
+        smooth: true,
+        lineStyle: {
+            stroke: '#1890ff',
+            lineWidth: 3,
+        },
+        point: {
+            size: 5,
+            shape: 'circle',
+            style: {
+                fill: '#1890ff',
+                stroke: '#fff',
+                lineWidth: 2,
+            },
         },
         label: {
-            position: 'top',
             style: {
                 fill: '#333',
-                fontWeight: 500,
-                fontSize: 18
+                fontSize: 14,
             },
         },
         xAxis: {
             label: {
+                formatter: (text) => dayjs(text).format('MMM D'),
                 style: {
-                    fontSize: 18,
-                    fill: '#333',
+                    fontSize: 14,
                 },
             },
         },
         yAxis: {
             label: {
+                formatter: (text) => `$${text}`,
                 style: {
-                    fontSize: 18,
-                    fill: '#333',
-                },
-            },
-            grid: {
-                line: {
-                    style: {
-                        stroke: '#f0f0f0',
-                        lineWidth: 1,
-                        lineDash: [4, 4],
-                    },
+                    fontSize: 14,
                 },
             },
         },
         tooltip: {
-            showMarkers: false,
-            customContent: (title, items) => {
-                if (!items || !items.length) return '';
-                return `<div style=\"padding:8px 12px;\">
-                    <div style=\"font-weight:600;font-size:18px;margin-bottom:4px;\">${title}</div>
-                    <div style=\"font-size:17px;\">Sales: <b>$${Number(items[0].data.sales).toFixed(2)}</b></div>
-                </div>`;
-            }
-        },
-        interactions: [{ type: 'active-region' }],
-        animation: {
-            appear: {
-                animation: 'scale-in-y',
-                duration: 800,
+            formatter: (datum) => {
+                return {
+                    name: 'Sales',
+                    value: `$${datum.amount.toFixed(2)}`,
+                };
             },
         },
-        style: {
-            borderRadius: 16,
-            boxShadow: '0 2px 8px rgba(24, 144, 255, 0.08)'
-        },
-        height: 480,
-        color: ({ date }) => {
-            // Assign a unique color to each bar based on its index
-            const idx = chartData.findIndex(item => item.date === date);
-            return colorPalette[idx % colorPalette.length];
-        },
-        padding: [40, 40, 60, 60],
+        height: 400,
     };
 
     return (
@@ -270,18 +249,7 @@ function SalesReportPage() {
                     }}>
                         <Title level={3} style={{ margin: 0, color: '#1a237e', letterSpacing: 1 }}>Sales Report</Title>
                         <Space>
-                            <Select
-                                value={selectedPeriod}
-                                onChange={setSelectedPeriod}
-                                style={{ width: 120, borderRadius: 8 }}
-                                options={[
-                                    { value: 'daily', label: 'Daily' },
-                                    { value: 'weekly', label: 'Weekly' },
-                                    { value: 'monthly', label: 'Monthly' }
-                                ]}
-                            />
                             <RangePicker
-                                value={dateRange}
                                 onChange={setDateRange}
                                 style={{ width: 300, borderRadius: 8 }}
                             />
@@ -316,8 +284,8 @@ function SalesReportPage() {
                             title={<span style={{ color: '#1976d2', fontWeight: 500 }}>Total Sales</span>}
                             value={summary.totalSales}
                             precision={2}
+                            prefix="$"
                             prefix={<DollarOutlined style={{ color: '#1976d2' }} />}
-                            valueStyle={{ color: '#3f8600' }}
                         />
                     </Card>
                 </Col>
@@ -332,7 +300,7 @@ function SalesReportPage() {
                         <Statistic
                             title={<span style={{ color: '#388e3c', fontWeight: 500 }}>Total Orders</span>}
                             value={summary.totalOrders}
-                            prefix={<ShoppingOutlined style={{ color: '#388e3c' }} />}
+                            prefix={<ShoppingCartOutlined style={{ color: '#388e3c' }} />}
                         />
                     </Card>
                 </Col>
@@ -348,8 +316,7 @@ function SalesReportPage() {
                             title={<span style={{ color: '#fbc02d', fontWeight: 500 }}>Average Order Value</span>}
                             value={summary.averageOrderValue}
                             precision={2}
-                            prefix={<DollarOutlined style={{ color: '#fbc02d' }} />}
-                            valueStyle={{ color: '#1890ff' }}
+                            prefix="$"
                         />
                     </Card>
                 </Col>
@@ -358,18 +325,16 @@ function SalesReportPage() {
                         style={{
                             borderRadius: 16,
                             boxShadow: '0 2px 8px rgba(24, 144, 255, 0.08)',
-                            background: 'linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%)',
+                            background: 'linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)',
                         }}
                     >
                         <Statistic
-                            title={<span style={{ color: '#d32f2f', fontWeight: 500 }}>Sales Growth</span>}
-                            value={summary.salesGrowth}
+                            title={<span style={{ color: summary.growthRate >= 0 ? '#4caf50' : '#f44336', fontWeight: 500 }}>Growth Rate</span>}
+                            value={summary.growthRate}
                             precision={2}
-                            valueStyle={{ 
-                                color: summary.salesGrowth >= 0 ? '#3f8600' : '#cf1322'
-                            }}
-                            prefix={summary.salesGrowth >= 0 ? <ArrowUpOutlined /> : <ArrowDownOutlined />}
+                            prefix={summary.growthRate >= 0 ? <RiseOutlined /> : <FallOutlined />}
                             suffix="%"
+                            valueStyle={{ color: summary.growthRate >= 0 ? '#4caf50' : '#f44336' }}
                         />
                     </Card>
                 </Col>
@@ -378,28 +343,33 @@ function SalesReportPage() {
             <Row gutter={[24, 24]} style={{ marginBottom: 24 }}>
                 <Col span={24}>
                     <Card
-                        title={<span style={{ fontWeight: 600, color: '#1a237e' }}>Sales Trend</span>}
+                        title={
+                            <Space>
+                                <LineChartOutlined />
+                                <span style={{ fontWeight: 600, color: '#1a237e' }}>Sales Trend</span>
+                            </Space>
+                        }
                         style={{ borderRadius: 16, boxShadow: '0 2px 8px rgba(24, 144, 255, 0.08)' }}
                         bodyStyle={{ padding: 24 }}
                     >
-                        <Column {...columnConfig} />
+                        <Line {...lineConfig} />
                     </Card>
                 </Col>
             </Row>
 
             <Card
-                title={<span style={{ fontWeight: 600, color: '#1a237e' }}>Detailed Sales Data</span>}
+                title={<span style={{ fontWeight: 600, color: '#1a237e' }}>Sales Details</span>}
                 style={{ borderRadius: 16, boxShadow: '0 2px 8px rgba(24, 144, 255, 0.08)' }}
                 bodyStyle={{ padding: 24 }}
             >
                 <Table
                     columns={columns}
-                    dataSource={chartData}
-                    rowKey="date"
+                    dataSource={filteredOrders}
+                    rowKey="id"
                     pagination={{
                         pageSize: 10,
                         showSizeChanger: true,
-                        showTotal: (total) => `Total ${total} records`
+                        showTotal: (total) => `Total ${total} orders`
                     }}
                     bordered
                     style={{ borderRadius: 12, overflow: 'hidden' }}

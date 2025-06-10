@@ -2,7 +2,7 @@ const { db, logError } = require("../util/helper");
 
 exports.create = async (req, res) => {
     try {
-        const { customer_id, items, total_amount, payment_method, payment_amount, change_amount } = req.body;
+        const { customer_id, items, total_amount, payment_method, payment_amount, change_amount, currency, exchange_rate_to_usd } = req.body;
 
         // Start transaction
         const connection = await db.getConnection();
@@ -17,8 +17,8 @@ exports.create = async (req, res) => {
 
             // Create order
             const [orderResult] = await connection.query(
-                "INSERT INTO orders (order_number, customer_id, total_amount, payment_method, payment_amount, change_amount, status, create_by) VALUES (?, ?, ?, ?, ?, ?, 'completed', ?)",
-                [orderNumber, customer_id, total_amount, payment_method, payment_amount, change_amount, req.auth?.name]
+                "INSERT INTO orders (order_number, customer_id, total_amount, payment_method, payment_amount, change_amount, status, create_by, currency, exchange_rate_to_usd) VALUES (?, ?, ?, ?, ?, ?, 'completed', ?, ?, ?)",
+                [orderNumber, customer_id, total_amount, payment_method, payment_amount, change_amount, req.auth?.name, currency, exchange_rate_to_usd]
             );
 
             const orderId = orderResult.insertId;
@@ -77,7 +77,7 @@ exports.create = async (req, res) => {
         }
 
     } catch (error) {
-        logError("order.create", error, res);
+        await logError("order.create", error);
         res.status(500).json({
             error: "Failed to create order",
             details: error.message
@@ -88,7 +88,9 @@ exports.create = async (req, res) => {
 exports.getList = async (req, res) => {
     try {
         const [orders] = await db.query(`
-            SELECT o.*, c.name as customer_name
+            SELECT o.*, c.name as customer_name,
+                DATE_FORMAT(o.created_at, '%Y-%m-%d %H:%i:%s') as created_at,
+                o.currency, o.exchange_rate_to_usd
             FROM orders o
             LEFT JOIN customer c ON o.customer_id = c.id
             ORDER BY o.id DESC
@@ -110,7 +112,7 @@ exports.getList = async (req, res) => {
             list: orders
         });
     } catch (error) {
-        logError("order.getList", error, res);
+        await logError("order.getList", error);
         res.status(500).json({
             error: "Failed to fetch orders",
             details: error.message

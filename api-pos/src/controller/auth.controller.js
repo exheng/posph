@@ -13,7 +13,8 @@ exports.getList = async (req, res) => {
             role,
         });
     } catch (error) {
-        logError("auth.getList", error, res);
+        await logError("auth.getList", error);
+        res.status(500).json({ error: "Failed to fetch users and roles", details: error.message });
     }
 };
 
@@ -36,7 +37,8 @@ exports.register = async (req,res) =>{
         }); 
 
     }catch (error){
-        logError("auth.register",error, res);
+        await logError("auth.register",error);
+        res.status(500).json({ error: "Failed to register user", details: error.message });
 
     };
 };
@@ -49,8 +51,8 @@ exports.login = async (req,res) => {
             username: username,
         });
 
-        if (data.length == 0){
-             res.json({
+        if (data.length === 0){
+             res.status(401).json({
                 error : {
                     username : "Username doesn't exist !",
                 },
@@ -59,7 +61,7 @@ exports.login = async (req,res) => {
             let dbPass = data[0].password;
             let isCorrectPass = bcrypt.compareSync(password, dbPass);
             if (!isCorrectPass){
-                res.json({
+                res.status(401).json({
                 error : {
                     password : "Password incorrect !",
                 },
@@ -79,7 +81,8 @@ exports.login = async (req,res) => {
         } 
 
     }catch (error){
-        logError("auth.login",error, res);
+        await logError("auth.login",error);
+        res.status(500).json({ error: "Login failed", details: error.message });
 
     };
 };
@@ -91,38 +94,8 @@ exports.profile = async (req,res) => {
         });
            
     }catch (error){
-        logError("auth.profile",error, res);
-    };
-};
-
-exports.validate_token = ( ) => {
-    return (req, res, next) => {
-        var authorization = req.headers.authorization;
-        var token_from_client = null;
-        if (authorization != null && authorization != ""){
-            token_from_client = authorization.split(" ");
-            token_from_client = token_from_client[1];
-;
-        }
-        if (token_from_client == null){
-            res.status(401).send({
-                message: "Unauthorized",
-            });
-        } else{
-            jwt.verify(token_from_client, config.config.token.access_token_key, (error, result) => {
-                if (error){
-                    res.status(401).send({
-                        message: "Unauthorized",
-                        error: error,
-                    });
-                } else {
-                    req.current_id = result.data.profile.id;
-                    req.auth = result.data.profile;
-                    req.permission = result.data.permission;
-                    next();
-                } 
-            });
-        }
+        await logError("auth.profile",error);
+        res.status(500).json({ error: "Failed to fetch profile", details: error.message });
     };
 };
 

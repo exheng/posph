@@ -36,6 +36,8 @@ function PerformancePage() {
     const [trendData, setTrendData] = useState([]);
     const [topProducts, setTopProducts] = useState([]);
     const [topCustomers, setTopCustomers] = useState([]);
+    const [dailyData, setDailyData] = useState([]);
+    const [monthlyData, setMonthlyData] = useState([]);
 
     useEffect(() => {
         getPerformanceData();
@@ -77,7 +79,7 @@ function PerformancePage() {
         // Best sales day
         const daySales = {};
         orders.forEach(order => {
-            const day = dayjs(order.create_at).format('YYYY-MM-DD');
+            const day = dayjs(order.created_at).format('YYYY-MM-DD');
             if (!daySales[day]) daySales[day] = 0;
             daySales[day] += Number(order.total_amount);
         });
@@ -117,6 +119,43 @@ function PerformancePage() {
         setTrendData(trend);
         setTopProducts(topProductsArr);
         setTopCustomers(topCustomersArr);
+
+        processData(orders);
+    };
+
+    const processData = (data) => {
+        const dailyData = {};
+        const monthlyData = {};
+
+        data.forEach(order => {
+            const day = dayjs(order.created_at).format('YYYY-MM-DD');
+            const month = dayjs(order.created_at).format('YYYY-MM');
+            
+            // Process daily data
+            if (!dailyData[day]) {
+                dailyData[day] = {
+                    date: day,
+                    sales: 0,
+                    orders: 0
+                };
+            }
+            dailyData[day].sales += Number(order.total_amount);
+            dailyData[day].orders += 1;
+
+            // Process monthly data
+            if (!monthlyData[month]) {
+                monthlyData[month] = {
+                    date: month,
+                    sales: 0,
+                    orders: 0
+                };
+            }
+            monthlyData[month].sales += Number(order.total_amount);
+            monthlyData[month].orders += 1;
+        });
+
+        setDailyData(Object.values(dailyData).sort((a, b) => a.date.localeCompare(b.date)));
+        setMonthlyData(Object.values(monthlyData).sort((a, b) => a.date.localeCompare(b.date)));
     };
 
     // Chart config

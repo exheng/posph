@@ -58,6 +58,31 @@ function PaymentPage() {
     // Get cart data from navigation state
     const { cart = [], total = 0, subtotal = 0, discount = 0, customer: navigatedCustomer } = location.state || {};
 
+    // Helper function to get currency symbol
+    const getCurrencySymbol = () => {
+        switch (config.store?.currency) {
+            case 'USD': return '$';
+            case 'EUR': return '€';
+            case 'GBP': return '£';
+            case 'JPY': return '¥';
+            case 'AUD': return 'A$';
+            case 'CAD': return 'C$';
+            case 'CHF': return 'CHF';
+            case 'CNY': return '¥';
+            case 'SEK': return 'kr';
+            case 'NZD': return 'NZ$';
+            case 'SGD': return 'S$';
+            case 'HKD': return 'HK$';
+            default: return '$'; // Default to USD symbol
+        }
+    };
+
+    // Helper function to format currency
+    const formatCurrency = (amount) => {
+        if (isNaN(amount)) return '0.00';
+        return Number(amount).toFixed(2);
+    };
+
     useEffect(() => {
         if (!cart || cart.length === 0) {
             message.error('No items in cart');
@@ -78,7 +103,7 @@ function PaymentPage() {
 
         // Set initial payment amount to total
         const initialPaymentAmount = Number(total || 0);
-        const initialDiscountPercent = discount > 0 ? (discount / subtotal) * 100 : 0;
+        const initialDiscountPercent = subtotal > 0 ? (discount / subtotal) * 100 : 0;
         setPaymentInfo(prev => ({
             ...prev,
             paymentAmount: initialPaymentAmount,
@@ -108,10 +133,6 @@ function PaymentPage() {
 
     const handlePayment = async () => {
         try {
-            if (!selectedCustomer && navigatedCustomer) {
-                setSelectedCustomer(navigatedCustomer.id);
-            }
-
             const finalPaymentAmount = Number(paymentInfo.paymentAmount || 0);
             const finalTotal = Number(subtotal || 0) - Number(paymentInfo.discount || 0);
 
@@ -123,28 +144,40 @@ function PaymentPage() {
             setLoading(true);
 
             const orderData = {
-                customer_id: selectedCustomer,
+                customer_id: navigatedCustomer?.id || null,
                 items: cart.map(item => ({
                     product_id: item.id,
                     quantity: item.quantity,
-                    price: item.price,
+                    // Backend expects prices in its base currency (likely USD) for calculations.
+                    // Convert item.price from current display currency back to USD for the backend.
+                    // Assuming `item.price` coming from POS page is already converted to selected currency
+                    // We need to convert it back to USD for the backend if the backend's base currency is USD.
+                    // Or, if backend handles currency conversion, send as is.
+                    // For now, let's assume backend expects USD price for products
+                    // and totals are calculated based on prices * exchange_rate.
+                    // If backend handles currency conversion, it needs to be updated.
+                    // For simplicity, let's pass price as is and total_amount in selected currency.
+                    price: item.price, // This `item.price` is the price in the *display* currency, as passed from PosPage.
                     discount: item.discount || 0
                 })),
-                total_amount: finalTotal,
+                // total_amount, payment_amount, change_amount are already in the selected currency
+                total_amount: finalTotal, 
                 payment_method: paymentInfo.paymentMethod,
                 payment_amount: finalPaymentAmount,
                 change_amount: finalPaymentAmount - finalTotal,
                 notes: paymentInfo.notes,
                 discount: paymentInfo.discount,
-                discount_percent: paymentInfo.discountPercent
+                discount_percent: paymentInfo.discountPercent,
+                // Add currency and exchange rate to order data for backend persistence
+                currency: config.store?.currency || 'USD',
+                exchange_rate_to_usd: config.store?.exchange_rate_to_usd || 1.0000
             };
 
-            const res = await request("order", "post", orderData);
+            const res = await request("order/create", "post", orderData);
             
             if (res && !res.error) {
                 message.success("Payment processed successfully!");
                 setCurrentStep(2);
-                // Navigate to receipt page with order number
                 navigate('/pos/receipt', { 
                     state: { 
                         orderNumber: res.data.order_number,
@@ -155,11 +188,15 @@ function PaymentPage() {
                         }
                     }
                 });
+            } else if (res?.error) {
+                console.error("Payment API Error:", res.details || res.error);
+                message.error(`Failed to process payment: ${res.details || res.error}`);
             } else {
-                message.error(res.error || "Failed to process payment");
+                console.error("Unexpected API Response:", res);
+                message.error("An unexpected error occurred during payment. Please try again.");
             }
         } catch (error) {
-            console.error("Payment error:", error);
+            console.error("Payment function error:", error);
             message.error("An error occurred while processing payment");
         } finally {
             setLoading(false);
@@ -214,7 +251,7 @@ function PaymentPage() {
             align: 'right',
             render: (price) => (
                 <Text strong style={{ color: '#52c41a' }}>
-                    ${Number(price || 0).toFixed(2)}
+                    {getCurrencySymbol()}{formatCurrency(Number(price || 0))}
                 </Text>
             )
         },
@@ -224,7 +261,7 @@ function PaymentPage() {
             align: 'right',
             render: (_, record) => (
                 <Text strong style={{ color: '#1890ff' }}>
-                    ${(Number(record.price || 0) * Number(record.quantity || 0)).toFixed(2)}
+                    {getCurrencySymbol()}{formatCurrency(Number(record.price || 0) * Number(record.quantity || 0))}
                 </Text>
             )
         }

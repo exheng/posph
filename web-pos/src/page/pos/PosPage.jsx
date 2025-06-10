@@ -56,7 +56,10 @@ function PosPage() {
         currentOrder: null,
         paymentMethod: 'cash',
         paymentAmount: 0,
-        changeAmount: 0
+        changeAmount: 0,
+        subtotal: 0,
+        discount: 0,
+        total: 0
     });
     const [form] = Form.useForm();
     const [paymentModalVisible, setPaymentModalVisible] = useState(false);
@@ -75,12 +78,47 @@ function PosPage() {
     const [showPayment, setShowPayment] = useState(false);
     const navigate = useNavigate();
 
+    const getCurrencySymbol = () => {
+        switch (config.store?.currency) {
+            case 'USD': return '$';
+            case 'EUR': return '€';
+            case 'GBP': return '£';
+            case 'JPY': return '¥';
+            case 'AUD': return 'A$';
+            case 'CAD': return 'C$';
+            case 'CHF': return 'CHF';
+            case 'CNY': return '¥';
+            case 'SEK': return 'kr';
+            case 'NZD': return 'NZ$';
+            case 'SGD': return 'S$';
+            case 'HKD': return 'HK$';
+            default: return '$';
+        }
+    };
+
+    const formatCurrency = (amount) => {
+        if (isNaN(amount)) return '0.00';
+        const rate = Number(config.store?.exchange_rate_to_usd || 1.0000);
+        const convertedAmount = amount / rate;
+        return convertedAmount.toFixed(2);
+    };
+
     useEffect(() => {
         getProducts();
         if (paymentModalVisible) {
             getCustomers();
         }
     }, [paymentModalVisible]);
+
+    useEffect(() => {
+        const totals = calculateTotals(state.cart);
+        setState(prev => ({
+            ...prev,
+            subtotal: totals.subtotal,
+            discount: totals.discount,
+            total: totals.total
+        }));
+    }, [state.cart, config.store?.currency, config.store?.exchange_rate_to_usd]);
 
     const getProducts = async () => {
         try {
@@ -122,19 +160,29 @@ function PosPage() {
     };
 
     const calculateTotals = (cart) => {
-        const subtotal = cart.reduce((sum, item) => {
+        const exchangeRate = Number(config.store?.exchange_rate_to_usd || 1.0000);
+
+        const subtotalUSD = cart.reduce((sum, item) => {
             const itemTotal = Number(item.price) * Number(item.quantity);
             return sum + itemTotal;
         }, 0);
         
-        const discount = cart.reduce((sum, item) => {
+        const discountUSD = cart.reduce((sum, item) => {
             const itemDiscount = (Number(item.price) * Number(item.quantity) * Number(item.discount || 0)) / 100;
             return sum + itemDiscount;
         }, 0);
 
-        const total = subtotal - discount;
+        const totalUSD = subtotalUSD - discountUSD;
 
-        return { subtotal, discount, total };
+        const subtotalConverted = subtotalUSD / exchangeRate;
+        const discountConverted = discountUSD / exchangeRate;
+        const totalConverted = totalUSD / exchangeRate;
+
+        return { 
+            subtotal: Number(subtotalConverted.toFixed(2)), 
+            discount: Number(discountConverted.toFixed(2)), 
+            total: Number(totalConverted.toFixed(2)) 
+        };
     };
 
     const updateCartItemQuantity = (productId, newQuantity) => {
@@ -146,14 +194,11 @@ function PosPage() {
         }
 
         if (newQuantity <= 0) {
-            // Remove item from cart if quantity is 0 or less
             setState(prev => {
                 const updatedCart = prev.cart.filter(item => item.id !== productId);
-                const totals = calculateTotals(updatedCart);
                 return {
                     ...prev,
                     cart: updatedCart,
-                    ...totals
                 };
             });
             return;
@@ -166,19 +211,14 @@ function PosPage() {
                 }
                 return item;
             });
-
-            const totals = calculateTotals(updatedCart);
-
             return {
                 ...prev,
                 cart: updatedCart,
-                ...totals
             };
         });
     };
 
     const addToCart = (product) => {
-        // Check if product has stock before adding to cart
         if (Number(product.qty || 0) <= 0) {
             message.warning("This product is out of stock");
             return;
@@ -189,7 +229,6 @@ function PosPage() {
             let updatedCart;
             
             if (existingItem) {
-                // If item exists, check if adding one more would exceed stock
                 const newQuantity = existingItem.quantity + 1;
                 if (newQuantity > Number(product.qty)) {
                     message.warning(`Only ${product.qty} items available in stock`);
@@ -202,16 +241,11 @@ function PosPage() {
                     return item;
                 });
             } else {
-                // Add new item to cart
                 updatedCart = [...prev.cart, { ...product, quantity: 1 }];
             }
-
-            const totals = calculateTotals(updatedCart);
-
             return {
                 ...prev,
                 cart: updatedCart,
-                ...totals
             };
         });
     };
@@ -219,12 +253,9 @@ function PosPage() {
     const removeFromCart = (productId) => {
         setState(prev => {
             const updatedCart = prev.cart.filter(item => item.id !== productId);
-            const totals = calculateTotals(updatedCart);
-
             return {
                 ...prev,
                 cart: updatedCart,
-                ...totals
             };
         });
     };
@@ -239,28 +270,9 @@ function PosPage() {
         }));
     };
 
-    const calculateTotal = (cart) => {
-        const subtotal = cart.reduce((sum, item) => {
-            return sum + (Number(item.price || 0) * Number(item.quantity || 0));
-        }, 0);
-
-        const discount = cart.reduce((sum, item) => {
-            const itemDiscount = Number(item.price || 0) * Number(item.quantity || 0) * (Number(item.discount || 0) / 100);
-            return sum + itemDiscount;
-        }, 0);
-
-        const total = subtotal - discount;
-
-        setState(prev => ({
-            ...prev,
-            subtotal: Number(subtotal.toFixed(2)),
-            discount: Number(discount.toFixed(2)),
-            total: Number(total.toFixed(2))
-        }));
-    };
-
     const handleCustomerSubmit = async (values) => {
         try {
+            setState(prev => ({ ...prev, loading: true }));
             const res = await request("customer", "post", values);
             if (res && !res.error) {
                 message.success("Customer registered successfully");
@@ -270,6 +282,8 @@ function PosPage() {
             }
         } catch (error) {
             message.error("Failed to register customer");
+        } finally {
+            setState(prev => ({ ...prev, loading: false }));
         }
     };
 
@@ -279,13 +293,12 @@ function PosPage() {
             return;
         }
 
-        const totals = calculateTotals(state.cart);
         navigate('/pos/customer-selection', {
             state: {
                 cart: state.cart,
-                total: totals.total,
-                subtotal: totals.subtotal,
-                discount: totals.discount
+                total: state.total,
+                subtotal: state.subtotal,
+                discount: state.discount
             }
         });
     };
@@ -336,7 +349,7 @@ function PosPage() {
             align: 'right',
             render: (price) => {
                 const numPrice = Number(price);
-                return isNaN(numPrice) ? '$0.00' : `$${numPrice.toFixed(2)}`;
+                return `${getCurrencySymbol()}${formatCurrency(numPrice)}`;
             }
         },
         {
@@ -377,7 +390,7 @@ function PosPage() {
             render: (_, record) => {
                 const total = record.price * record.quantity;
                 const discount = (record.discount || 0) * record.quantity;
-                return `$${(total - discount).toFixed(2)}`;
+                return `${getCurrencySymbol()}${formatCurrency(total - discount)}`;
             }
         }
     ];
@@ -467,7 +480,7 @@ function PosPage() {
                                                     <Space direction="vertical" size="small">
                                                         <Text type="secondary">Brand: {item.brand}</Text>
                                                         <Text type="secondary">Category: {item.category_name}</Text>
-                                                        <Text strong>Price: ${item.price}</Text>
+                                                        <Text strong>Price: {getCurrencySymbol()}{formatCurrency(item.price)}</Text>
                                                         <Text>Stock: {item.qty}</Text>
                                                     </Space>
                                                 }
@@ -554,7 +567,7 @@ function PosPage() {
                                         width: 100,
                                         align: 'right',
                                         render: (_, record) => (
-                                            <Text strong>${(Number(record.price || 0) * Number(record.quantity || 0)).toFixed(2)}</Text>
+                                            <Text strong>{getCurrencySymbol()}{formatCurrency(Number(record.price || 0) * Number(record.quantity || 0))}</Text>
                                         )
                                     }
                                 ]}
@@ -574,7 +587,7 @@ function PosPage() {
                                     padding: '8px 0'
                                 }}>
                                     <Text type="secondary">Subtotal:</Text>
-                                    <Text>${Number(state.subtotal || 0).toFixed(2)}</Text>
+                                    <Text>{getCurrencySymbol()}{state.subtotal.toFixed(2)}</Text>
                                 </div>
                                 <div style={{ 
                                     display: 'flex', 
@@ -582,7 +595,7 @@ function PosPage() {
                                     padding: '8px 0'
                                 }}>
                                     <Text type="secondary">Discount:</Text>
-                                    <Text>${Number(state.discount || 0).toFixed(2)}</Text>
+                                    <Text>{getCurrencySymbol()}{state.discount.toFixed(2)}</Text>
                                 </div>
                                 <Divider style={{ margin: '12px 0' }} />
                                 <div style={{ 
@@ -591,7 +604,7 @@ function PosPage() {
                                     padding: '8px 0'
                                 }}>
                                     <Text strong style={{ fontSize: '16px' }}>Total:</Text>
-                                    <Text strong style={{ fontSize: '16px', color: '#1890ff' }}>${Number(state.total || 0).toFixed(2)}</Text>
+                                    <Text strong style={{ fontSize: '16px', color: '#1890ff' }}>{getCurrencySymbol()}{state.total.toFixed(2)}</Text>
                                 </div>
                             </Space>
 

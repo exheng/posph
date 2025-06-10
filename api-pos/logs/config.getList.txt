@@ -6,3 +6,27 @@ Error
 Error
 Error
 Error
+Error: Table 'pos.store_settings' doesn't exist
+Error: Table 'pos.store_settings' doesn't exist
+Error: Table 'pos.store_settings' doesn't exist
+Error: Table 'pos.store_settings' doesn't exist
+Error: Table 'pos.store_settings' doesn't exist
+Error: Table 'pos.store_settings' doesn't exist
+Error: Table 'pos.store_settings' doesn't exist
+Error: Table 'pos.store_settings' doesn't exist
+Error: Table 'pos.store_settings' doesn't exist
+Error: Table 'pos.store_settings' doesn't exist
+Error: Table 'pos.store_settings' doesn't exist
+Error: Table 'pos.store_settings' doesn't exist
+Error: Unknown column 'exchange_rate_to_usd' in 'field list'
+Error: Unknown column 'exchange_rate_to_usd' in 'field list'
+Error: Unknown column 'exchange_rate_to_usd' in 'field list'
+Error: Unknown column 'exchange_rate_to_usd' in 'field list'
+Error: Unknown column 'exchange_rate_to_usd' in 'field list'
+Error: Unknown column 'exchange_rate_to_usd' in 'field list'
+Error: Unknown column 'exchange_rate_to_usd' in 'field list'
+Error: Unknown column 'exchange_rate_to_usd' in 'field list'
+Error: Unknown column 'label' in 'field list'
+Error: Unknown column 'label' in 'field list'
+Error: Unknown column 'label' in 'field list'
+Error: Unknown column 'label' in 'field list'

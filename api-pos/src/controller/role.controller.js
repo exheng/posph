@@ -9,7 +9,8 @@ exports.getList = async (req,res) => {
         list:list,
     }); 
     } catch (error){
-        logError("log.getList", error,res);
+        await logError("role.getList", error);
+        res.status(500).json({ error: "Failed to fetch roles", details: error.message });
 
     } 
 };
@@ -26,7 +27,8 @@ exports.create =  async (req,res) => {
         message:"Insert Success !",
     }); 
     }catch(error){
-        logError("role.create", error,res);
+        await logError("role.create", error);
+        res.status(500).json({ error: "Failed to create role", details: error.message });
     }
    
 };
@@ -44,7 +46,8 @@ exports.update = async (req,res) => {
         message : "Data Update Success!"
     }); 
     }catch(error){
-        logError("role.update", error,res);
+        await logError("role.update", error);
+        res.status(500).json({ error: "Failed to update role", details: error.message });
     }
 };
 
@@ -59,6 +62,7 @@ exports.remove = async (req,res) => {
         message : "Data Delete Success!"
     }); 
     }catch(error){
-        logError("role.remove", error,res);
+        await logError("role.remove", error);
+        res.status(500).json({ error: "Failed to remove role", details: error.message });
     }
 };

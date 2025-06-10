@@ -45,15 +45,13 @@ function SupplierPage() {
       form.resetFields();
     }
     const onFinish = async(items) =>{
-       var method ="post";
-      if (form.getFieldValue("id")){
-          method ="put";
-      }
+      const method = form.getFieldValue("id") ? "put" : "post";
+      const endpoint = form.getFieldValue("id") ? "supplier/update" : "supplier/create";
       var params = {
         ...items,
         id : form.getFieldValue("id")
       }
-      const res   = await request("supplier", method, params);
+      const res   = await request(endpoint, method, params);
       if (res && !res.error){
         getList();
         closeModel();

@@ -30,6 +30,8 @@ import InventoryReportPage from './page/report/InventoryReportPage';
 import Performance from './page/report/PerformancePage';
 import PerformancePage from "./page/report/PerformancePage";
 import DashboardPage from "./page/dashboard/DashboardPage";
+import GeneralSettingPage from "./page/setting/GeneralSettingPage";
+// import BrandPage from "./page/brand/BrandPage";
 
 function App() {
   return (
@@ -56,6 +58,7 @@ function App() {
       <Route path="/sales-report" element={<SalesReportPage />} />
       <Route path="/inventory-report" element={<InventoryReportPage />} />
       <Route path="/performance" element={<PerformancePage/>}/>
+      <Route path="/general" element={<GeneralSettingPage/>}/>
       <Route path="*" element={<h1>Route Not Found!!</h1>}/>
       </Route>
 
