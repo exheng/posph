@@ -13,20 +13,27 @@ function LogingPage() {
 
   const onLogin = async (item) => {
     try {
+      console.log('Attempting login with:', { username: item.username });
       const param = {
         username: item.username,
         password: item.password,
       };
       const res = await request("auth/login", "post", param);
+      console.log('Login response:', res);
+      
       if (res && !res.error) {
+        console.log('Login successful, setting tokens and profile');
         setAccessToken(res.access_token);
-        setProfile(JSON.stringify(res.profile));
+        setProfile(res.profile);
         message.success('Login successful!');
-        navigate("/");
+        console.log('Navigating to home page');
+        navigate("/", { replace: true });
       } else {
-        message.error(res.error?.username || res.error?.password || 'Login failed');
+        console.error('Login failed:', res?.error);
+        message.error(res?.error?.username || res?.error?.password || 'Login failed');
       }
     } catch (error) {
+      console.error('Login error:', error);
       message.error('An error occurred during login');
     }
   };
