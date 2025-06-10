@@ -277,6 +277,91 @@ function ProductPage() {
         });
     };
 
+    const columns = [
+        {
+            title: 'No',
+            dataIndex: 'id',
+            key: 'id',
+            render: (_, __, index) => index + 1,
+        },
+        {
+            title: 'Image',
+            dataIndex: 'image',
+            key: 'image',
+            render: (image) => (
+                <Image
+                    width={50}
+                    height={50}
+                    src={image ? `http://localhost:8081/pos_img/${image}` : 'default-product.png'}
+                    style={{ objectFit: 'cover' }}
+                />
+            ),
+        },
+        {
+            title: 'Name',
+            dataIndex: 'name',
+            key: 'name',
+        },
+        {
+            title: 'Barcode',
+            dataIndex: 'barcode',
+            key: 'barcode',
+        },
+        {
+            title: 'Category',
+            dataIndex: 'category_name',
+            key: 'category_name',
+        },
+        {
+            title: 'Brand',
+            dataIndex: 'brand_name',
+            key: 'brand_name',
+        },
+        {
+            title: 'Stock',
+            dataIndex: 'qty',
+            key: 'qty',
+        },
+        {
+            title: 'Price',
+            dataIndex: 'price',
+            key: 'price',
+            render: (price) => `$${price.toFixed(2)}`,
+        },
+        {
+            title: 'Status',
+            dataIndex: 'status',
+            key: 'status',
+            render: (status) => (
+                <Tag color={status === 1 ? 'green' : 'red'}>
+                    {status === 1 ? 'Active' : 'Inactive'}
+                </Tag>
+            ),
+        },
+        {
+            title: 'Action',
+            key: 'action',
+            render: (_, record) => (
+                <Space size="middle">
+                    <Button 
+                        type="primary" 
+                        icon={<MdEdit />} 
+                        onClick={() => clickBtnEdit(record)}
+                    >
+                        Edit
+                    </Button>
+                    <Button 
+                        danger 
+                        icon={<MdDelete />} 
+                        onClick={() => clickBtnDelete(record)}
+                    >
+                        Delete
+                    </Button>
+                </Space>
+            ),
+        },
+    ];
+
     return (
         <MainPage loading={state.loading}>
             <div className="pageHeader">
@@ -400,7 +485,7 @@ function ProductPage() {
                                 title={item.name}
                                 description={
                                     <Space direction="vertical" size="small">
-                                        <Text type="secondary">Brand: {item.brand}</Text>
+                                        <Text type="secondary">Brand: {item.brand_name}</Text>
                                         <Text type="secondary">Category: {item.category_name}</Text>
                                         <Text strong>Price: ${item.price}</Text>
                                         <Text>Stock: {item.qty}</Text>

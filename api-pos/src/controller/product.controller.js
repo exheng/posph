@@ -7,9 +7,11 @@ exports.getList = async (req,res) => {
             SELECT 
                 p.*,
                 c.Name as category_name,
-                c.Description as category_description
+                c.Description as category_description,
+                b.label as brand_name
             FROM product p
             LEFT JOIN category c ON p.category_id = c.Id
+            LEFT JOIN brand b ON p.brand = b.id
             ORDER BY p.id DESC
         `;
         const [list] = await db.query(sql);
