@@ -103,6 +103,23 @@ exports.profile = async (req,res) => {
     };
 };
 
+exports.remove = async (req, res) => {
+    try {
+        const { id } = req.params;
+        if (!id) {
+            return res.status(400).json({ error: 'User ID is required.' });
+        }
+        const [result] = await db.query('DELETE FROM user WHERE id = ?', [id]);
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'User not found.' });
+        }
+        res.json({ message: 'User deleted successfully!' });
+    } catch (error) {
+        await logError('auth.remove', error);
+        res.status(500).json({ error: 'Failed to delete user.' });
+    }
+};
+
 const getAccessToken = async (paramData) => {
     const access_token = await jwt.sign({ data: paramData }, config.config.token.access_token_key, { expiresIn: "1d" });
     return access_token;
