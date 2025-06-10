@@ -72,12 +72,38 @@ exports.login = async (req,res) => {
                 });
             } else{
                 delete data[0].password;
+                
+                // Define permissions based on role
+                let permissions = [];
+                if (data[0].role_name.toLowerCase() === 'cashier') {
+                    permissions = [
+                        'use_pos',
+                        'manage_customers',
+                        'view_orders',
+                        'view_inventory',
+                        'view_products',
+                        'view_stock_alerts'
+                    ];
+                } else {
+                    permissions = [
+                        'view_all',
+                        'delete',
+                        'edit',
+                        'manage_users',
+                        'manage_roles',
+                        'manage_settings',
+                        'view_reports',
+                        'manage_purchases',
+                        'view_dashboard'
+                    ];
+                }
+
                 let obj = {
-                    profile : data[0],
-                    permision: ["view_all", "delete","edit"]
+                    profile: data[0],
+                    permissions: permissions
                 }
                 res.json({ 
-                    message : "Login success",
+                    message: "Login success",
                     ...obj,
                     access_token: await getAccessToken(obj),
                 });
@@ -87,7 +113,6 @@ exports.login = async (req,res) => {
     }catch (error){
         await logError("auth.login",error);
         res.status(500).json({ error: "Login failed", details: error.message });
-
     };
 };
     

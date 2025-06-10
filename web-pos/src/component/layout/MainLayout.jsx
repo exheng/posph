@@ -57,130 +57,151 @@ import { MdHistory } from "react-icons/md";
 const { Header, Content, Footer, Sider } = Layout;
 const { Text, Title } = Typography;
 
-const items = [
-  {
-    key: "/",
-    label: "Dashboard",
-    icon: <PieChartOutlined />,
-    children: null,
-  },
-  {
-    key: "pos",
-    label: "Point of Sale",
-    icon: <ShoppingCartOutlined />,
-    children: null,
-  },
-  {
-    key: "customer",
-    label: "Customers",
-    icon: <CustomerServiceOutlined />,
-  },
-  {
-    key: "order",
-    label: "Orders",
-    icon: <ShoppingCartOutlined />,
-  },
-  {
-    key: "inventory",
-    label: "Inventory",
-    icon: <ShopOutlined />,
-    children: [
-      {
-        key: "product",
-        label: "Products",
-        icon: <TagsOutlined />,
-      },
-      {
-        key: "category",
-        label: "Categories",
-        icon: <FileOutlined />,
-      },
-      {
-        key: "stock-alerts",
-        label: "Stock Alerts",
-        icon: <BellOutlined />,
-      },
-    ],
-  },
-  {
-    key: "purchase",
-    label: "Purchasing",
-    icon: <BankOutlined />,
-    children: [
-      {
-        key: "supplier",
-        label: "Suppliers",
-        icon: <TeamOutlined />,
-      },
-      {
-        key: "purchase",
-        label: "Purchase Orders",
-        icon: <FileTextOutlined />,
-      },
-    ],
-  },
-  {
-    key: "reports",
-    label: "Reports & Analytics",
-    icon: <BarChartOutlined />,
-    children: [
-      {
-        key: "sales-report",
-        label: "Sales Reports",
-        icon: <DollarOutlined />,
-      },
-      {
-        key: "inventory-report",
-        label: "Inventory Reports",
-        icon: <ShopOutlined />,
-      },
-      {
-        key: "performance",
-        label: "Performance",
-        icon: <BarChartOutlined />,
-      },
-    ],
-  },
-  {
-    key: "user",
-    label: "User Management",
-    icon: <UsergroupAddOutlined />,
-    children: [
-      {
-        key: "user",
-        label: "Users",
-        icon: <UserOutlined />,
-      },
-      {
-        key: "role",
-        label: "Roles",
-        icon: <SafetyOutlined />,
-      },
-    ],
-  },
-  {
-    key: "setting",
-    label: "Settings",
-    icon: <SettingFilled />,
-    children: [
-      {
-        key: "general",
-        label: "General Settings",
-        icon: <SettingFilled />,
-      },
-      {
-        key: "payment",
-        label: "Payment Methods",
-        icon: <DollarOutlined />,
-      },
-      {
-        key: "notification",
-        label: "Notifications",
-        icon: <BellOutlined />,
-      },
-    ],
-  },
-];
+const getMenuItems = (role) => {
+  const allItems = [
+    {
+      key: "/",
+      label: "Dashboard",
+      icon: <PieChartOutlined />,
+      children: null,
+    },
+    {
+      key: "pos",
+      label: "Point of Sale",
+      icon: <ShoppingCartOutlined />,
+      children: null,
+    },
+    {
+      key: "customer",
+      label: "Customers",
+      icon: <CustomerServiceOutlined />,
+    },
+    {
+      key: "order",
+      label: "Orders",
+      icon: <ShoppingCartOutlined />,
+    },
+    {
+      key: "inventory",
+      label: "Inventory",
+      icon: <ShopOutlined />,
+      children: [
+        {
+          key: "product",
+          label: "Products",
+          icon: <TagsOutlined />,
+        },
+        {
+          key: "category",
+          label: "Categories",
+          icon: <FileOutlined />,
+        },
+        {
+          key: "stock-alerts",
+          label: "Stock Alerts",
+          icon: <BellOutlined />,
+        },
+      ],
+    },
+    {
+      key: "purchase",
+      label: "Purchasing",
+      icon: <BankOutlined />,
+      children: [
+        {
+          key: "supplier",
+          label: "Suppliers",
+          icon: <TeamOutlined />,
+        },
+        {
+          key: "purchase",
+          label: "Purchase Orders",
+          icon: <FileTextOutlined />,
+        },
+      ],
+    },
+    {
+      key: "reports",
+      label: "Reports & Analytics",
+      icon: <BarChartOutlined />,
+      children: [
+        {
+          key: "sales-report",
+          label: "Sales Reports",
+          icon: <DollarOutlined />,
+        },
+        {
+          key: "inventory-report",
+          label: "Inventory Reports",
+          icon: <ShopOutlined />,
+        },
+        {
+          key: "performance",
+          label: "Performance",
+          icon: <BarChartOutlined />,
+        },
+      ],
+    },
+    {
+      key: "user",
+      label: "User Management",
+      icon: <UsergroupAddOutlined />,
+      children: [
+        {
+          key: "user",
+          label: "Users",
+          icon: <UserOutlined />,
+        },
+        {
+          key: "role",
+          label: "Roles",
+          icon: <SafetyOutlined />,
+        },
+      ],
+    },
+    {
+      key: "setting",
+      label: "Settings",
+      icon: <SettingFilled />,
+      children: [
+        {
+          key: "general",
+          label: "General Settings",
+          icon: <SettingFilled />,
+        },
+        {
+          key: "payment",
+          label: "Payment Methods",
+          icon: <DollarOutlined />,
+        },
+        {
+          key: "notification",
+          label: "Notifications",
+          icon: <BellOutlined />,
+        },
+      ],
+    },
+  ];
+
+  // Filter menu items based on role
+  if (role?.toLowerCase() === 'cashier') {
+    return allItems.filter(item => 
+      ['pos', 'customer', 'order', 'inventory'].includes(item.key)
+    ).map(item => {
+      if (item.key === 'inventory') {
+        return {
+          ...item,
+          children: item.children?.filter(child => 
+            ['product', 'stock-alerts'].includes(child.key)
+          )
+        };
+      }
+      return item;
+    });
+  }
+
+  return allItems;
+};
 
 const MainLayout = () => {
   const { config, setConfig } = configStore();
@@ -325,7 +346,7 @@ const MainLayout = () => {
           theme="dark"
           defaultSelectedKeys={["/"]}
           mode="inline"
-          items={items}
+          items={getMenuItems(profile?.role_name)}
           onClick={onClickMenu}
           style={{
             background: "transparent",
