@@ -4,16 +4,21 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
 exports.getList = async (req, res) => {
+    let connection;
     try {
+        connection = await db.getConnection();
         let sql = "SELECT u.id, u.name, u.username, u.create_by, u.is_active, r.name AS role_name FROM user u INNER JOIN role r ON u.role_id = r.id";
-        const [list] = await db.query(sql);
-        const [role] = await db.query("SELECT id as value, name as label FROM role");
+        const [list] = await connection.query(sql);
+        const [role] = await connection.query("SELECT id as value, name as label FROM role");
         res.json({
             list,
             role,
         });
     } catch (error) {
-        logError("auth.getList", error, res);
+        await logError("auth.getList", error);
+        res.status(500).json({ error: "Failed to fetch users and roles", details: error.message });
+    } finally {
+        if (connection) connection.release();
     }
 };
 
@@ -36,7 +41,8 @@ exports.register = async (req,res) =>{
         }); 
 
     }catch (error){
-        logError("auth.register",error, res);
+        await logError("auth.register",error);
+        res.status(500).json({ error: "Failed to register user", details: error.message });
 
     };
 };
@@ -49,8 +55,8 @@ exports.login = async (req,res) => {
             username: username,
         });
 
-        if (data.length == 0){
-             res.json({
+        if (data.length === 0){
+             res.status(401).json({
                 error : {
                     username : "Username doesn't exist !",
                 },
@@ -59,19 +65,45 @@ exports.login = async (req,res) => {
             let dbPass = data[0].password;
             let isCorrectPass = bcrypt.compareSync(password, dbPass);
             if (!isCorrectPass){
-                res.json({
+                res.status(401).json({
                 error : {
                     password : "Password incorrect !",
                 },
                 });
             } else{
                 delete data[0].password;
+                
+                // Define permissions based on role
+                let permissions = [];
+                if (data[0].role_name.toLowerCase() === 'cashier') {
+                    permissions = [
+                        'use_pos',
+                        'manage_customers',
+                        'view_orders',
+                        'view_inventory',
+                        'view_products',
+                        'view_stock_alerts'
+                    ];
+                } else {
+                    permissions = [
+                        'view_all',
+                        'delete',
+                        'edit',
+                        'manage_users',
+                        'manage_roles',
+                        'manage_settings',
+                        'view_reports',
+                        'manage_purchases',
+                        'view_dashboard'
+                    ];
+                }
+
                 let obj = {
-                    profile : data[0],
-                    permision: ["view_all", "delete","edit"]
+                    profile: data[0],
+                    permissions: permissions
                 }
                 res.json({ 
-                    message : "Login success",
+                    message: "Login success",
                     ...obj,
                     access_token: await getAccessToken(obj),
                 });
@@ -79,8 +111,8 @@ exports.login = async (req,res) => {
         } 
 
     }catch (error){
-        logError("auth.login",error, res);
-
+        await logError("auth.login",error);
+        res.status(500).json({ error: "Login failed", details: error.message });
     };
 };
     
@@ -91,39 +123,26 @@ exports.profile = async (req,res) => {
         });
            
     }catch (error){
-        logError("auth.profile",error, res);
+        await logError("auth.profile",error);
+        res.status(500).json({ error: "Failed to fetch profile", details: error.message });
     };
 };
 
-exports.validate_token = ( ) => {
-    return (req, res, next) => {
-        var authorization = req.headers.authorization;
-        var token_from_client = null;
-        if (authorization != null && authorization != ""){
-            token_from_client = authorization.split(" ");
-            token_from_client = token_from_client[1];
-;
+exports.remove = async (req, res) => {
+    try {
+        const { id } = req.params;
+        if (!id) {
+            return res.status(400).json({ error: 'User ID is required.' });
         }
-        if (token_from_client == null){
-            res.status(401).send({
-                message: "Unauthorized",
-            });
-        } else{
-            jwt.verify(token_from_client, config.config.token.access_token_key, (error, result) => {
-                if (error){
-                    res.status(401).send({
-                        message: "Unauthorized",
-                        error: error,
-                    });
-                } else {
-                    req.current_id = result.data.profile.id;
-                    req.auth = result.data.profile;
-                    req.permission = result.data.permission;
-                    next();
-                } 
-            });
+        const [result] = await db.query('DELETE FROM user WHERE id = ?', [id]);
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'User not found.' });
         }
-    };
+        res.json({ message: 'User deleted successfully!' });
+    } catch (error) {
+        await logError('auth.remove', error);
+        res.status(500).json({ error: 'Failed to delete user.' });
+    }
 };
 
 const getAccessToken = async (paramData) => {

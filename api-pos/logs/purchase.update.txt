@@ -1,0 +1,5 @@
+Error: Column 'purchase_order_id' cannot be null
+Error: Column 'purchase_order_id' cannot be null
+Error: Column 'purchase_order_id' cannot be null
+Error: Column 'purchase_order_id' cannot be null
+Error: Column 'purchase_order_id' cannot be null

@@ -17,5 +17,5 @@ module.exports = {
         access_token_key:"lfabfsjfawfkjwfbj!$!$%@%!@&%@GgiaghgekyffhfgsyfgwfbGAFGEFWVSDFGAWUefgyfetFufgfuefy!@!$@%$^#%@$$163746714791185987654uygfderghredvjgfdnbc"
     }
    },
-};;
+};
 

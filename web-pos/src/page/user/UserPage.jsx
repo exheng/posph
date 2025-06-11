@@ -15,9 +15,9 @@ function UserPage() {
     },[]);
 
     const getList=async () =>{
-        const res = await request("auth/get-list", "get");
+        const res = await request("auth", "get");
         if (res && !res.error) {
-            setState((prv)=>({
+            setState((prv)=>({ 
                 ...prv,
                 list: res.list,
                 role: res.role,
@@ -32,24 +32,23 @@ function UserPage() {
         });
         handleOpenModal();
     };
-    const clickBtnDelete = (item) =>{
-       Modal.confirm({
-             title:"Delete",
-             content:"Are you sure?",
-             onOk: async () => {
-               const res = await request("auth/delete", "delete",{
-                 id: item.id,
-               });
-               if(res && !res.error){
-                 message.success(res.message);
-                 const newList = state.list.filter((item1)=>item1.id != item.id);
-                 setState((prv)=>({
+    const clickBtnDelete = (item) => {
+        Modal.confirm({
+            title: "Delete",
+            content: "Are you sure?",
+            onOk() {
+            return request(`auth/${item.id}`, "delete")
+                .then(res => {
+                if (res && !res.error) {
+                    message.success(res.message);
+                    const newList = state.list.filter((item1) => item1.id !== item.id);
+                    setState((prv) => ({
                     ...prv,
                     list: newList,
                     }));
                 }
-            },
-             
+                });
+            }
         });
     };
 
@@ -220,13 +219,13 @@ function UserPage() {
                         key: "action",
                         title: "Action",
                         align: "center",
-                        render : (value,data) => (
+                        render: (value, data) => (
                             <Space>
-                                <Button onClick={()=>clickBtnEdit(data)} type="primary">Edit</Button>
-                                <Button onClick={()=>clickBtnDelete(data)} danger type="primary">Delete</Button>
+                            <Button onClick={() => clickBtnEdit(data)} type="primary">Edit</Button>
+                            <Button onClick={() => clickBtnDelete(data)} danger type="primary">Delete</Button>
                             </Space>
                         )
-                    },
+                    }
                 ]}
             />
         </div>
