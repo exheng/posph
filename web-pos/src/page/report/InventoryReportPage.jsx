@@ -90,7 +90,7 @@ function InventoryReportPage() {
         const csvData = filteredProducts.map(item => [
             item.name,
             item.category_name,
-            item.brand,
+            item.brand_name,
             item.qty,
             item.status === 1 ? 'Active' : 'Inactive'
         ]);
@@ -120,7 +120,7 @@ function InventoryReportPage() {
         },
         {
             title: 'Brand',
-            dataIndex: 'brand',
+            dataIndex: 'brand_name',
             key: 'brand',
             render: (text) => <Tag color="purple" style={{ fontSize: 14 }}>{text}</Tag>
         },

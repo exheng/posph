@@ -27,8 +27,9 @@ import ReceiptPage from './page/pos/ReceiptPage';
 import OrderListPage from './page/order/OrderListPage';
 import SalesReportPage from './page/report/SalesReportPage';
 import InventoryReportPage from './page/report/InventoryReportPage';
-import Performance from './page/report/PerformancePage';
+import PerformanceReportPage from './page/report/PerformanceReportPage';
 import PerformancePage from "./page/report/PerformancePage";
+import PurchaseOrderReportPage from "./page/report/PurchaseOrderReportPage";
 import DashboardPage from "./page/dashboard/DashboardPage";
 import GeneralSettingPage from "./page/setting/GeneralSettingPage";
 import SettingPage from "./page/setting/SettingPage";
@@ -88,6 +89,8 @@ function App() {
         <Route path="/sales-report" element={<SalesReportPage />} />
         <Route path="/inventory-report" element={<InventoryReportPage />} />
         <Route path="/performance" element={<PerformancePage/>}/>
+        <Route path="/performance-report" element={<PerformanceReportPage/>}/>
+        <Route path="/purchase-order-report" element={<PurchaseOrderReportPage/>}/>
         <Route path="/general" element={<GeneralSettingPage/>}/>
         <Route path="/notification" element={<SettingPage/>}/>
         <Route path="*" element={<h1>Route Not Found!!</h1>}/>

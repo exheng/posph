@@ -25,6 +25,8 @@ import {
   TagsOutlined,
   UsergroupAddOutlined,
   ShoppingOutlined,
+  SettingOutlined,
+  LogoutOutlined,
 } from "@ant-design/icons";
 import { 
   Breadcrumb, 
@@ -52,7 +54,7 @@ import { configStore } from "../../store/configStore";
 import { notificationStore } from "../../store/notification.store";
 import NotificationPanel from "./NotificationPanel";
 import MessagePanel from "./MessagePanel";
-import { MdHistory } from "react-icons/md";
+import { MdNotifications, MdMessage, MdPerson, MdTrendingUp } from "react-icons/md";
 
 const { Header, Content, Footer, Sider } = Layout;
 const { Text, Title } = Typography;
@@ -126,6 +128,11 @@ const getMenuItems = (role) => {
       icon: <BarChartOutlined />,
       children: [
         {
+          key: "performance",
+          label: "Performance",
+          icon: <MdTrendingUp />,
+        },
+        {
           key: "sales-report",
           label: "Sales Reports",
           icon: <DollarOutlined />,
@@ -136,9 +143,14 @@ const getMenuItems = (role) => {
           icon: <ShopOutlined />,
         },
         {
-          key: "performance",
-          label: "Performance",
-          icon: <BarChartOutlined />,
+          key: "purchase-order-report",
+          label: "Purchase Order Reports",
+          icon: <ShoppingOutlined />,
+        },
+        {
+          key: "performance-report",
+          label: "Performance Report",
+          icon: <MdTrendingUp />,
         },
       ],
     },
@@ -162,12 +174,12 @@ const getMenuItems = (role) => {
     {
       key: "setting",
       label: "Settings",
-      icon: <SettingFilled />,
+      icon: <SettingOutlined />,
       children: [
         {
           key: "general",
           label: "General Settings",
-          icon: <SettingFilled />,
+          icon: <SettingOutlined />,
         },
         {
           key: "payment",
@@ -276,7 +288,7 @@ const MainLayout = () => {
     {
       key: "settings",
       label: "Account Settings",
-      icon: <SettingFilled />,
+      icon: <SettingOutlined />,
       onClick: () => navigate("/settings")
     },
     {
@@ -286,7 +298,7 @@ const MainLayout = () => {
       key: "logout",
       danger: true,
       label: "Logout",
-      icon: <SafetyOutlined />,
+      icon: <LogoutOutlined />,
       onClick: onLogOut
     },
   ];
@@ -414,7 +426,7 @@ const MainLayout = () => {
               <Badge count={notifications.filter(n => !n.read).length} size="small">
                 <Button
                   type="text"
-                  icon={<BellOutlined />}
+                  icon={<MdNotifications />}
                   style={{
                     fontSize: "18px",
                     width: "40px",
@@ -436,7 +448,7 @@ const MainLayout = () => {
               <Badge count={notifications.filter(n => n.read).length} size="small">
                 <Button
                   type="text"
-                  icon={<MailOutlined />}
+                  icon={<MdMessage />}
                   style={{
                     fontSize: "18px",
                     width: "40px",
