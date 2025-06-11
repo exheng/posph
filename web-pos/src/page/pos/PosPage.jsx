@@ -478,7 +478,7 @@ function PosPage() {
                                                 title={item.name}
                                                 description={
                                                     <Space direction="vertical" size="small">
-                                                        <Text type="secondary">Brand: {item.brand}</Text>
+                                                        <Text type="secondary">Brand: {item.brand_name}</Text>
                                                         <Text type="secondary">Category: {item.category_name}</Text>
                                                         <Text strong>Price: {getCurrencySymbol()}{formatCurrency(item.price)}</Text>
                                                         <Text>Stock: {item.qty}</Text>

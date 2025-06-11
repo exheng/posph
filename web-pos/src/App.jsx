@@ -31,6 +31,7 @@ import Performance from './page/report/PerformancePage';
 import PerformancePage from "./page/report/PerformancePage";
 import DashboardPage from "./page/dashboard/DashboardPage";
 import GeneralSettingPage from "./page/setting/GeneralSettingPage";
+import SettingPage from "./page/setting/SettingPage";
 // import BrandPage from "./page/brand/BrandPage";
 import { getProfile } from './store/profile.store';
 
@@ -88,6 +89,7 @@ function App() {
         <Route path="/inventory-report" element={<InventoryReportPage />} />
         <Route path="/performance" element={<PerformancePage/>}/>
         <Route path="/general" element={<GeneralSettingPage/>}/>
+        <Route path="/notification" element={<SettingPage/>}/>
         <Route path="*" element={<h1>Route Not Found!!</h1>}/>
       </Route>
     </Routes>
