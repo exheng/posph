@@ -24,6 +24,9 @@ import {
   GiftOutlined,
   TagsOutlined,
   UsergroupAddOutlined,
+  ShoppingOutlined,
+  SettingOutlined,
+  LogoutOutlined,
 } from "@ant-design/icons";
 import { 
   Breadcrumb, 
@@ -38,187 +41,213 @@ import {
   Typography,
   Button,
   Divider,
-  Tooltip
+  Tooltip,
+  Spin
 } from "antd";
 import { Navigate, Outlet, useNavigate } from "react-router-dom";
 import "./MainLayout.css";
 import logo from "../../assets/Shop-logo.png";
 import imguser from "../../assets/imguser.jpg";
 import { getProfile, setAccessToken, setProfile } from "../../store/profile.store";
-import { request } from "../../util/helper";
+import { request, getStoreLogoUrl } from "../../util/helper";
 import { configStore } from "../../store/configStore";
+import { notificationStore } from "../../store/notification.store";
+import NotificationPanel from "./NotificationPanel";
+import MessagePanel from "./MessagePanel";
+import { MdNotifications, MdMessage, MdPerson, MdTrendingUp } from "react-icons/md";
 
 const { Header, Content, Footer, Sider } = Layout;
 const { Text, Title } = Typography;
 
-const items = [
-  {
-    key: "/",
-    label: "Dashboard",
-    icon: <PieChartOutlined />,
-    children: null,
-  },
-  {
-    key: "pos",
-    label: "Point of Sale",
-    icon: <ShoppingCartOutlined />,
-    children: null,
-  },
-  {
-    key: "customer",
-    label: "Customers",
-    icon: <CustomerServiceOutlined />,
-    children: [
-      {
-        key: "customer",
-        label: "Customer List",
-        icon: <TeamOutlined />,
-      },
-      {
-        key: "loyalty",
-        label: "Loyalty Program",
-        icon: <GiftOutlined />,
-      },
-    ],
-  },
-  {
-    key: "order",
-    label: "Orders",
-    icon: <FileTextOutlined />,
-    children: null,
-  },
-  {
-    key: "inventory",
-    label: "Inventory",
-    icon: <ShopOutlined />,
-    children: [
-      {
-        key: "product",
-        label: "Products",
-        icon: <TagsOutlined />,
-      },
-      {
-        key: "category",
-        label: "Categories",
-        icon: <FileOutlined />,
-      },
-      {
-        key: "stock-alerts",
-        label: "Stock Alerts",
-        icon: <BellOutlined />,
-      },
-    ],
-  },
-  {
-    key: "repairs",
-    label: "Repairs & Services",
-    icon: <ToolOutlined />,
-    children: [
-      {
-        key: "repair-requests",
-        label: "Repair Requests",
-        icon: <FileTextOutlined />,
-      },
-      {
-        key: "technicians",
-        label: "Technicians",
-        icon: <TeamOutlined />,
-      },
-    ],
-  },
-  {
-    key: "purchase",
-    label: "Purchasing",
-    icon: <BankOutlined />,
-    children: [
-      {
-        key: "supplier",
-        label: "Suppliers",
-        icon: <TeamOutlined />,
-      },
-      {
-        key: "purchase",
-        label: "Purchase Orders",
-        icon: <FileTextOutlined />,
-      },
-    ],
-  },
-  {
-    key: "reports",
-    label: "Reports & Analytics",
-    icon: <BarChartOutlined />,
-    children: [
-      {
-        key: "sales-report",
-        label: "Sales Reports",
-        icon: <DollarOutlined />,
-      },
-      {
-        key: "inventory-report",
-        label: "Inventory Reports",
-        icon: <ShopOutlined />,
-      },
-      {
-        key: "performance",
-        label: "Performance",
-        icon: <BarChartOutlined />,
-      },
-    ],
-  },
-  {
-    key: "user",
-    label: "User Management",
-    icon: <UsergroupAddOutlined />,
-    children: [
-      {
-        key: "user",
-        label: "Users",
-        icon: <UserOutlined />,
-      },
-      {
-        key: "role",
-        label: "Roles",
-        icon: <SafetyOutlined />,
-      },
-    ],
-  },
-  {
-    key: "setting",
-    label: "Settings",
-    icon: <SettingFilled />,
-    children: [
-      {
-        key: "general",
-        label: "General Settings",
-        icon: <SettingFilled />,
-      },
-      {
-        key: "payment",
-        label: "Payment Methods",
-        icon: <DollarOutlined />,
-      },
-      {
-        key: "notification",
-        label: "Notifications",
-        icon: <BellOutlined />,
-      },
-    ],
-  },
-];
+const getMenuItems = (role) => {
+  const allItems = [
+    {
+      key: "/",
+      label: "Dashboard",
+      icon: <PieChartOutlined />,
+      children: null,
+    },
+    {
+      key: "pos",
+      label: "Point of Sale",
+      icon: <ShoppingCartOutlined />,
+      children: null,
+    },
+    {
+      key: "customer",
+      label: "Customers",
+      icon: <CustomerServiceOutlined />,
+    },
+    {
+      key: "order",
+      label: "Orders",
+      icon: <ShoppingCartOutlined />,
+    },
+    {
+      key: "inventory",
+      label: "Inventory",
+      icon: <ShopOutlined />,
+      children: [
+        {
+          key: "product",
+          label: "Products",
+          icon: <TagsOutlined />,
+        },
+        {
+          key: "category",
+          label: "Categories",
+          icon: <FileOutlined />,
+        },
+        {
+          key: "stock-alerts",
+          label: "Stock Alerts",
+          icon: <BellOutlined />,
+        },
+      ],
+    },
+    {
+      key: "purchase",
+      label: "Purchasing",
+      icon: <BankOutlined />,
+      children: [
+        {
+          key: "supplier",
+          label: "Suppliers",
+          icon: <TeamOutlined />,
+        },
+        {
+          key: "purchase",
+          label: "Purchase Orders",
+          icon: <FileTextOutlined />,
+        },
+      ],
+    },
+    {
+      key: "reports",
+      label: "Reports & Analytics",
+      icon: <BarChartOutlined />,
+      children: [
+        {
+          key: "performance",
+          label: "Performance",
+          icon: <MdTrendingUp />,
+        },
+        {
+          key: "sales-report",
+          label: "Sales Reports",
+          icon: <DollarOutlined />,
+        },
+        {
+          key: "inventory-report",
+          label: "Inventory Reports",
+          icon: <ShopOutlined />,
+        },
+        {
+          key: "purchase-order-report",
+          label: "Purchase Order Reports",
+          icon: <ShoppingOutlined />,
+        },
+        {
+          key: "performance-report",
+          label: "Performance Report",
+          icon: <MdTrendingUp />,
+        },
+      ],
+    },
+    {
+      key: "user",
+      label: "User Management",
+      icon: <UsergroupAddOutlined />,
+      children: [
+        {
+          key: "user",
+          label: "Users",
+          icon: <UserOutlined />,
+        },
+        {
+          key: "role",
+          label: "Roles",
+          icon: <SafetyOutlined />,
+        },
+      ],
+    },
+    {
+      key: "setting",
+      label: "Settings",
+      icon: <SettingOutlined />,
+      children: [
+        {
+          key: "general",
+          label: "General Settings",
+          icon: <SettingOutlined />,
+        },
+        {
+          key: "payment",
+          label: "Payment Methods",
+          icon: <DollarOutlined />,
+        },
+        {
+          key: "notification",
+          label: "Notifications",
+          icon: <BellOutlined />,
+        },
+      ],
+    },
+  ];
+
+  // Filter menu items based on role
+  if (role?.toLowerCase() === 'cashier') {
+    return allItems.filter(item => 
+      ['pos', 'customer', 'order', 'inventory'].includes(item.key)
+    ).map(item => {
+      if (item.key === 'inventory') {
+        return {
+          ...item,
+          children: item.children?.filter(child => 
+            ['product', 'stock-alerts'].includes(child.key)
+          )
+        };
+      }
+      return item;
+    });
+  }
+
+  return allItems;
+};
 
 const MainLayout = () => {
-  const { setConfig } = configStore();
+  const { config, setConfig } = configStore();
+  const { notifications } = notificationStore();
   const profile = getProfile();
   const [collapsed, setCollapsed] = useState(false);
+  const [notificationVisible, setNotificationVisible] = useState(false);
+  const [messageVisible, setMessageVisible] = useState(false);
+  const [configLoading, setConfigLoading] = useState(true);
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
 
   useEffect(() => {
-    getConfig();
-    if (!profile) {
-      navigate("/login");
-    }
+    const initializeApp = async () => {
+      await getConfig();
+      if (!profile) {
+        navigate("/login");
+      }
+      setConfigLoading(false);
+    };
+    initializeApp();
+  }, []);
+
+  // Add event listener for config updates
+  useEffect(() => {
+    const handleConfigUpdate = () => {
+      getConfig();
+    };
+
+    window.addEventListener('configUpdated', handleConfigUpdate);
+    return () => {
+      window.removeEventListener('configUpdated', handleConfigUpdate);
+    };
   }, []);
 
   const navigate = useNavigate();
@@ -232,7 +261,7 @@ const MainLayout = () => {
       if (res && !res.error) {
         setConfig(res);
       } else {
-        console.error("Failed to load config:", res?.error);
+        console.error("Failed to load config:", res?.details || res?.error);
       }
     } catch (error) {
       console.error("Error loading config:", error);
@@ -240,8 +269,8 @@ const MainLayout = () => {
   };
 
   const onLogOut = () => {
-    setProfile();
-    setAccessToken();
+    setProfile(null);
+    setAccessToken(null);
     navigate("/login");
   };
 
@@ -259,7 +288,7 @@ const MainLayout = () => {
     {
       key: "settings",
       label: "Account Settings",
-      icon: <SettingFilled />,
+      icon: <SettingOutlined />,
       onClick: () => navigate("/settings")
     },
     {
@@ -269,7 +298,7 @@ const MainLayout = () => {
       key: "logout",
       danger: true,
       label: "Logout",
-      icon: <SafetyOutlined />,
+      icon: <LogoutOutlined />,
       onClick: onLogOut
     },
   ];
@@ -300,7 +329,7 @@ const MainLayout = () => {
           }}
         >
           <img
-            src={logo}
+            src={config?.store?.logo ? getStoreLogoUrl(config.store.logo) : logo}
             alt="logo"
             style={{
               height: "40px",
@@ -308,11 +337,15 @@ const MainLayout = () => {
               objectFit: "contain",
               marginRight: collapsed ? 0 : "12px",
             }}
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = logo;
+            }}
           />
           {!collapsed && (
             <div>
               <Title level={4} style={{ color: "white", margin: 0, fontSize: "16px" }}>
-                PhoneShop POS
+                {config?.store?.name || "PhoneShop POS"}
               </Title>
               <Text style={{ color: "rgba(255, 255, 255, 0.65)", fontSize: "12px" }}>
                 Management System
@@ -325,7 +358,7 @@ const MainLayout = () => {
           theme="dark"
           defaultSelectedKeys={["/"]}
           mode="inline"
-          items={items}
+          items={getMenuItems(profile?.role_name)}
           onClick={onClickMenu}
           style={{
             background: "transparent",
@@ -369,7 +402,7 @@ const MainLayout = () => {
             
             <div>
               <Title level={3} style={{ margin: 0, color: "#1890ff", fontSize: "20px" }}>
-                PhoneShop POS
+                {config?.store?.name || "PhoneShop POS"}
               </Title>
               <Text style={{ color: "#8c8c8c", fontSize: "14px" }}>
                 Point of Sale Management System
@@ -390,10 +423,10 @@ const MainLayout = () => {
 
           <Space size="large" align="center">
             <Tooltip title="Notifications">
-              <Badge count={5} size="small">
+              <Badge count={notifications.filter(n => !n.read).length} size="small">
                 <Button
                   type="text"
-                  icon={<BellOutlined />}
+                  icon={<MdNotifications />}
                   style={{
                     fontSize: "18px",
                     width: "40px",
@@ -403,15 +436,19 @@ const MainLayout = () => {
                     justifyContent: "center",
                     borderRadius: "8px",
                   }}
+                  onClick={() => {
+                    setNotificationVisible(!notificationVisible);
+                    setMessageVisible(false);
+                  }}
                 />
               </Badge>
             </Tooltip>
 
             <Tooltip title="Messages">
-              <Badge count={2} size="small">
+              <Badge count={notifications.filter(n => n.read).length} size="small">
                 <Button
                   type="text"
-                  icon={<MailOutlined />}
+                  icon={<MdMessage />}
                   style={{
                     fontSize: "18px",
                     width: "40px",
@@ -420,6 +457,10 @@ const MainLayout = () => {
                     alignItems: "center",
                     justifyContent: "center",
                     borderRadius: "8px",
+                  }}
+                  onClick={() => {
+                    setMessageVisible(!messageVisible);
+                    setNotificationVisible(false);
                   }}
                 />
               </Badge>
@@ -458,6 +499,38 @@ const MainLayout = () => {
               </Dropdown>
             </div>
           </Space>
+
+          {notificationVisible && (
+            <div
+              style={{
+                position: 'absolute',
+                top: '80px',
+                right: '24px',
+                zIndex: 1000,
+                backgroundColor: 'white',
+                borderRadius: '8px',
+                boxShadow: '0 3px 6px -4px rgba(0,0,0,0.12), 0 6px 16px 0 rgba(0,0,0,0.08), 0 9px 28px 8px rgba(0,0,0,0.05)'
+              }}
+            >
+              <NotificationPanel />
+            </div>
+          )}
+
+          {messageVisible && (
+            <div
+              style={{
+                position: 'absolute',
+                top: '80px',
+                right: '24px',
+                zIndex: 1000,
+                backgroundColor: 'white',
+                borderRadius: '8px',
+                boxShadow: '0 3px 6px -4px rgba(0,0,0,0.12), 0 6px 16px 0 rgba(0,0,0,0.08), 0 9px 28px 8px rgba(0,0,0,0.05)'
+              }}
+            >
+              <MessagePanel />
+            </div>
+          )}
         </div>
 
         <Content
@@ -466,18 +539,24 @@ const MainLayout = () => {
             minHeight: "calc(100vh - 128px)",
           }}
         >
-          <div
-            style={{
-              background: colorBgContainer,
-              borderRadius: borderRadiusLG,
-              padding: "24px",
-              minHeight: "100%",
-              boxShadow: "0 2px 8px 0 rgba(0, 0, 0, 0.06)",
-              border: "1px solid #f0f0f0",
-            }}
-          >
-            <Outlet />
-          </div>
+          {configLoading ? (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+              <Spin size="large" tip="Loading Application..." />
+            </div>
+          ) : (
+            <div
+              style={{
+                background: colorBgContainer,
+                borderRadius: borderRadiusLG,
+                padding: "24px",
+                minHeight: "100%",
+                boxShadow: "0 2px 8px 0 rgba(0, 0, 0, 0.06)",
+                border: "1px solid #f0f0f0",
+              }}
+            >
+              <Outlet />
+            </div>
+          )}
         </Content>
 
         <div

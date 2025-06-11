@@ -153,6 +153,7 @@ function ProductPage() {
 
     const onFinish = async (items) => {
         try {
+            setState(prev => ({ ...prev, loading: true }));
             var params = new FormData();
             params.append("id", form.getFieldValue("id")); // Add ID for update
             params.append("name", items.name);
@@ -164,15 +165,18 @@ function ProductPage() {
             params.append("price", items.price);
             params.append("discount", items.discount);
             params.append("status", items.status);
+            
+            // Only append image if a new one is selected
             if (items.image_default?.file?.originFileObj) {
                 params.append("upload_image", items.image_default.file.originFileObj, items.image_default.file.name);
             }
 
             const method = form.getFieldValue("id") ? "put" : "post";
-            const res = await request("product", method, params);
+            const endpoint = form.getFieldValue("id") ? "product/update" : "product/create";
+            const res = await request(endpoint, method, params);
             
             if (res && !res.error) {
-                message.success(res.message || "Operation successful!");
+                message.success(res.message || (method === "post" ? "Product created successfully!" : "Product updated successfully!"));
                 oncloseModal();
                 getProducts();
             } else {
@@ -180,17 +184,19 @@ function ProductPage() {
             }
         } catch (error) {
             message.error("An error occurred while saving the product");
+        } finally {
+            setState(prev => ({ ...prev, loading: false }));
         }
     };
 
     const onNewBtn = async () => {
-        const res = await request ("new_barcode","post")
-        if (res && !res.error){
-            form.setFieldValue("barcode", res.barcode)
-            setState((p)=>({
+        const res = await request("product/new_barcode", "post");
+        if (res && !res.error) {
+            form.setFieldValue("barcode", res.barcode);
+            setState((p) => ({
                 ...p,
-                visibleModal:true,
-            }))
+                visibleModal: true,
+            }));
         }
     };
 
@@ -223,7 +229,7 @@ function ProductPage() {
                 uid: '-1',
                 name: item.image,
                 status: 'done',
-                url: `http://localhost:/pos_img/${item.image}`
+                url: `http://localhost:8081/pos_img/${item.image}`
             }]);
         }
         setState((p)=>({
@@ -235,16 +241,126 @@ function ProductPage() {
     const clickBtnDelete = (item) => {
         Modal.confirm({
             title: "Delete Product",
-            content: "Are you sure you want to delete this product?",
+            icon: <MdDelete style={{ color: '#ff4d4f' }} />,
+            content: (
+                <div>
+                    <p>Are you sure you want to delete this product?</p>
+                    <p><strong>Product:</strong> {item.name}</p>
+                    <p><strong>Barcode:</strong> {item.barcode}</p>
+                    <p><strong>Current Stock:</strong> {item.qty}</p>
+                    <p style={{ color: '#ff4d4f', marginTop: '8px' }}>
+                        This action cannot be undone.
+                    </p>
+                </div>
+            ),
+            okText: "Yes, Delete",
+            okType: "danger",
+            cancelText: "Cancel",
             onOk: async () => {
-                const res = await request("product", "delete", { id: item.id });
-                if (res && !res.error) {
-                    message.success(res.message || "Product deleted successfully!");
-                    getProducts();
+                try {
+                    setState(prev => ({ ...prev, loading: true }));
+                    const res = await request("product", "delete", { id: item.id });
+                    if (res && !res.error) {
+                        message.success("Product deleted successfully!");
+                        getProducts();
+                    } else {
+                        console.error("Delete error:", res.error);
+                        message.error("An error occurred while deleting the product");
+                    }
+                } catch (error) {
+                    console.error("Delete error:", error);
+                    message.error("An error occurred while deleting the product");
+                } finally {
+                    setState(prev => ({ ...prev, loading: false }));
                 }
             }
         });
     };
+
+    const columns = [
+        {
+            title: 'No',
+            dataIndex: 'id',
+            key: 'id',
+            render: (_, __, index) => index + 1,
+        },
+        {
+            title: 'Image',
+            dataIndex: 'image',
+            key: 'image',
+            render: (image) => (
+                <Image
+                    width={50}
+                    height={50}
+                    src={image ? `http://localhost:8081/pos_img/${image}` : 'default-product.png'}
+                    style={{ objectFit: 'cover' }}
+                />
+            ),
+        },
+        {
+            title: 'Name',
+            dataIndex: 'name',
+            key: 'name',
+        },
+        {
+            title: 'Barcode',
+            dataIndex: 'barcode',
+            key: 'barcode',
+        },
+        {
+            title: 'Category',
+            dataIndex: 'category_name',
+            key: 'category_name',
+        },
+        {
+            title: 'Brand',
+            dataIndex: 'brand_name',
+            key: 'brand_name',
+        },
+        {
+            title: 'Stock',
+            dataIndex: 'qty',
+            key: 'qty',
+        },
+        {
+            title: 'Price',
+            dataIndex: 'price',
+            key: 'price',
+            render: (price) => `$${price.toFixed(2)}`,
+        },
+        {
+            title: 'Status',
+            dataIndex: 'status',
+            key: 'status',
+            render: (status) => (
+                <Tag color={status === 1 ? 'green' : 'red'}>
+                    {status === 1 ? 'Active' : 'Inactive'}
+                </Tag>
+            ),
+        },
+        {
+            title: 'Action',
+            key: 'action',
+            render: (_, record) => (
+                <Space size="middle">
+                    <Button 
+                        type="primary" 
+                        icon={<MdEdit />} 
+                        onClick={() => clickBtnEdit(record)}
+                    >
+                        Edit
+                    </Button>
+                    <Button 
+                        danger 
+                        icon={<MdDelete />} 
+                        onClick={() => clickBtnDelete(record)}
+                    >
+                        Delete
+                    </Button>
+                </Space>
+            ),
+        },
+    ];
 
     return (
         <MainPage loading={state.loading}>
@@ -279,7 +395,7 @@ function ProductPage() {
                             allowClear
                             style={{ width: 200 }}
                             placeholder="Category"
-                            options={config.category}
+                            options={config?.category || []}
                             value={state.selectedCategory}
                             onChange={(value) => setState(prev => ({ ...prev, selectedCategory: value }))}
                         />
@@ -287,7 +403,7 @@ function ProductPage() {
                             allowClear
                             style={{ width: 200 }}
                             placeholder="Brand"
-                            options={config.brand}
+                            options={config?.brand?.map((item) => ({ label: `${item.label} (${item.country})`, value: item.value })) || []}
                             value={state.selectedBrand}
                             onChange={(value) => setState(prev => ({ ...prev, selectedBrand: value }))}
                         />
@@ -328,7 +444,7 @@ function ProductPage() {
                                     {item.image ? (
                                         <Image
                                             alt={item.name}
-                                            src={`http://localhost:/pos_img/${item.image}`}
+                                            src={`http://localhost:8081/pos_img/${item.image}`}
                                             style={{ 
                                                 width: '100%',
                                                 height: '100%',
@@ -346,15 +462,21 @@ function ProductPage() {
                                     <Button 
                                         type="text" 
                                         icon={<MdEdit />} 
-                                        onClick={() => clickBtnEdit(item)}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            clickBtnEdit(item);
+                                        }}
                                     />
                                 </Tooltip>,
                                 <Tooltip title="Delete">
                                     <Button 
                                         type="text" 
-                                        danger 
+                                        danger
                                         icon={<MdDelete />} 
-                                        onClick={() => clickBtnDelete(item)}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            clickBtnDelete(item);
+                                        }}
                                     />
                                 </Tooltip>
                             ]}
@@ -363,7 +485,7 @@ function ProductPage() {
                                 title={item.name}
                                 description={
                                     <Space direction="vertical" size="small">
-                                        <Text type="secondary">Brand: {item.brand}</Text>
+                                        <Text type="secondary">Brand: {item.brand_name}</Text>
                                         <Text type="secondary">Category: {item.category_name}</Text>
                                         <Text strong>Price: ${item.price}</Text>
                                         <Text>Stock: {item.qty}</Text>
@@ -380,7 +502,7 @@ function ProductPage() {
 
             <Modal 
                 open={state.visibleModal}
-                title={form.getFieldValue("Id") ? "Edit Product" : "New Product"} 
+                title={form.getFieldValue("id") ? "Edit Product" : "New Product"} 
                 footer={null} 
                 onCancel={oncloseModal}
                 width={700}
@@ -396,7 +518,7 @@ function ProductPage() {
                                     }
                                 ]}
                             > 
-                            <Input placeholder="Input Product Name" />
+                                <Input placeholder="Input Product Name" />
                             </Form.Item>
 
                             <Form.Item name="brand" label="Brand"
@@ -437,7 +559,7 @@ function ProductPage() {
                                 > 
                                 <Select 
                                     placeholder="Select Category"
-                                    options={config.category}
+                                    options={config?.category}
                                 />
                             </Form.Item>
 
@@ -511,8 +633,8 @@ function ProductPage() {
                     <div style={{textAlign: "right"}}>
                         <Space>
                             <Button onClick={oncloseModal}>Cancel</Button>
-                            <Button type="primary" htmlType="submit" onClick={onFinish}>
-                            {form.getFieldValue("Id") ? "Update" : "Save"}
+                            <Button type="primary" htmlType="submit">
+                                {form.getFieldValue("id") ? "Update" : "Save"}
                             </Button>
                         </Space>
                     </div>

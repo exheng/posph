@@ -15,7 +15,8 @@ exports.getList = async (req,res) => {
         list,
     }); 
     } catch (error){
-        logError("supplier.getList", error,res);
+        await logError("supplier.getList", error);
+        res.status(500).json({ error: "Failed to fetch suppliers", details: error.message });
 
     } 
 };
@@ -32,7 +33,8 @@ exports.create =  async (req,res) => {
         message:"Insert Success !",
     }); 
     }catch(error){
-        logError("supplier.create", error,res);
+        await logError("supplier.create", error);
+        res.status(500).json({ error: "Failed to create supplier", details: error.message });
     }
    
 };
@@ -48,7 +50,8 @@ exports.update = async (req,res) => {
         message:"Update Success !",
     }); 
     }catch(error){
-        logError("supplier.update", error,res);
+        await logError("supplier.update", error);
+        res.status(500).json({ error: "Failed to update supplier", details: error.message });
     }
 };
 
@@ -63,6 +66,7 @@ exports.remove = async (req,res) => {
         message : "Data Delete Success!"
     }); 
     }catch(error){
-        logError("remove.create", error,res);
+        await logError("supplier.remove", error);
+        res.status(500).json({ error: "Failed to remove supplier", details: error.message });
     }
 };

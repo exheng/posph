@@ -1,0 +1,2 @@
+Error: Column 'product_id' cannot be null
+Error: Column 'product_id' cannot be null

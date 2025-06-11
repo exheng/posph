@@ -1,78 +1,55 @@
 const express = require("express");
 const cors = require("cors");
 const app = express();
+const port = 8081;
+const path = require("path");
+const { config } = require("./src/util/config"); // Import config
+const { initializeSettingsTables } = require("./src/controller/config.controller"); // Import initializeSettingsTables
 
-app.use(express.json());
-app.use(express.urlencoded({ extended:false }));
-app.use(cors({origin:"*"}));
+// Import routes
+const authRoutes = require("./src/route/auth.route");
+const roleRoutes = require("./src/route/role.route");
+const productRoutes = require("./src/route/product.route");
+const categoryRoutes = require("./src/route/category.route");
+const supplierRoutes = require("./src/route/supplier.route");
+const purchaseRoutes = require("./src/route/purchase.route");
+const configRoutes = require("./src/route/config.route");
+const customerRoutes = require("./src/route/customer.route");
+const orderRoutes = require("./src/route/order.route");
+const brandRoutes = require("./src/route/brand.route"); // Import brand routes
 
-app.get("/",(req, res)=>{
-    const list = [
-        {id: 1 , name: "a" },
-        {id: 2 , name: "b" },
-        
-    ];
-    res.json({
-        list,
-    });
-});
-app.get("/api/home",(req, res)=>{
-    const data = [
-        {
-         title : "Customer",
-         obj:{
-            total : 100,
-            total_m : 50,
-            total_f : 10,
-         }
-   
-        },
-        {
-            title : "sale",
-            obj:{
-               total : 200,
-               due : 50,
-            }
-      
-        },
-        {
-            title : "Expens",
-            obj:{
-               total : 1000,
-            }
-      
-        },
-        {
-            title : "Employee",
-            obj:{
-               total : 1000,
-            }
-      
-        },
-        {
-            title : "stoke",
-            obj:{
-               total : 100,
-            }
-      
-        },
-    ]
-    res.json({
-        list : data,
-    });
-});
+const startServer = async () => {
+    try {
+        await initializeSettingsTables();
+        console.log("Database tables initialized. Starting server...");
 
-require("./src/route/category.route")(app);
-require("./src/route/auth.route")(app);
-require("./src/route/role.route")(app);
-require("./src/route/supplier.route")(app);
-require("./src/route/config.route")(app);
-require("./src/route/product.route")(app);
+        app.use(cors());
+        app.use(express.json());
 
-const PORT = 8081;
-app.listen(PORT, () =>{
-    console.log("http://localhost:" + PORT);
-    
-});
+        // Serve static files from the 'pos_img' directory as defined in config
+        app.use('/pos_img', express.static(config.img_path));
+
+        // Use routes
+        app.use('/api/auth', authRoutes);
+        app.use('/api/role', roleRoutes);
+        app.use('/api/product', productRoutes);
+        app.use('/api/category', categoryRoutes);
+        app.use('/api/supplier', supplierRoutes);
+        app.use('/api/purchase', purchaseRoutes);
+        app.use('/api/config', configRoutes);
+        app.use('/api/customer', customerRoutes);
+        app.use('/api/order', orderRoutes);
+        app.use('/api/brand', brandRoutes); // Use brand routes
+
+        app.listen(port, () => {
+            console.log(`Server is running on port ${port}`);
+        });
+    } catch (error) {
+        console.error("Failed to initialize database tables or start server:", error);
+        process.exit(1); // Exit if essential services fail to start
+    }
+};
+
+startServer();
 
 

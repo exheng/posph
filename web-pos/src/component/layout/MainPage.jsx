@@ -22,7 +22,7 @@ const info ={
 }
 
 export default function MainPage({ children, loading}) {
-    var server_status = getServerSatus();
+    var server_status = getServerSatus() || "200";
     const isServerError = ["403", "404", "500", "error"].includes(server_status.toString());
 
 if (isServerError) {

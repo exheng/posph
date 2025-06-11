@@ -1,0 +1,2 @@
+Error: Unknown column 'order_number' in 'field list'
+Error: Unknown column 'currency' in 'field list'

@@ -1,0 +1,22 @@
+Error getting brand list: Cannot read properties of undefined (reading 'pool')
+Error getting brand list: Cannot read properties of undefined (reading 'pool')
+Error getting brand list: Cannot read properties of undefined (reading 'pool')
+Error getting brand list: Cannot read properties of undefined (reading 'pool')
+Error getting brand list: Cannot read properties of undefined (reading 'pool')
+Error getting brand list: Cannot read properties of undefined (reading 'pool')
+Error getting brand list: Cannot read properties of undefined (reading 'pool')
+Error getting brand list: Cannot read properties of undefined (reading 'pool')
+Error getting brand list: Cannot read properties of undefined (reading 'pool')
+Error getting brand list: Cannot read properties of undefined (reading 'pool')
+Error getting brand list: Cannot read properties of undefined (reading 'pool')
+Error getting brand list: Cannot read properties of undefined (reading 'pool')
+Error creating brand: Unknown column 'label' in 'field list'
+Error creating brand: Unknown column 'label' in 'field list'
+Error creating brand: Unknown column 'label' in 'field list'
+Error creating brand: Unknown column 'label' in 'field list'
+Error creating brand: Unknown column 'label' in 'field list'
+Error creating brand: Unknown column 'label' in 'field list'
+Error creating brand: Table 'pos.brand' doesn't exist
+Error creating brand: Table 'pos.brand' doesn't exist
+Error creating brand: Table 'pos.brand' doesn't exist
+Error creating brand: Table 'pos.brand' doesn't exist

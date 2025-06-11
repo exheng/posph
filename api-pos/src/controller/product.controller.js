@@ -7,9 +7,11 @@ exports.getList = async (req,res) => {
             SELECT 
                 p.*,
                 c.Name as category_name,
-                c.Description as category_description
+                c.Description as category_description,
+                b.label as brand_name
             FROM product p
             LEFT JOIN category c ON p.category_id = c.Id
+            LEFT JOIN brand b ON p.brand = b.id
             ORDER BY p.id DESC
         `;
         const [list] = await db.query(sql);
@@ -17,7 +19,8 @@ exports.getList = async (req,res) => {
             list: list,
         }); 
     } catch (error){
-        logError("product.getList", error,res);
+        await logError("product.getList", error);
+        res.status(500).json({ error: "Failed to fetch products", details: error.message });
     } 
 };
 
@@ -45,7 +48,8 @@ exports.create = async (req, res) => {
       message: "Insert Success!",
     });
   } catch (error) {
-    logError("product.create", error, res);
+    await logError("product.create", error);
+    res.status(500).json({ error: "Failed to create product", details: error.message });
   }
 };
 
@@ -100,7 +104,8 @@ exports.update = async (req, res) => {
             message: "Product updated successfully!"
         });
     } catch (error) {
-        logError("product.update", error, res);
+        await logError("product.update", error);
+        res.status(500).json({ error: "Failed to update product", details: error.message });
     }
 };
 
@@ -114,7 +119,8 @@ exports.remove = async (req, res) => {
             message: "Product deleted successfully!"
         });
     } catch (error) {
-        logError("product.remove", error, res);
+        await logError("product.remove", error);
+        res.status(500).json({ error: "Failed to remove product", details: error.message });
     }
 };
 
@@ -127,7 +133,8 @@ exports.newBarcode = async (req,res) => {
         message : "Data Delete Success!"
     }); 
     }catch(error){
-        logError("remove.create", error,res);
+        await logError("product.newBarcode", error);
+        res.status(500).json({ error: "Failed to generate new barcode", details: error.message });
     }
 }; 
 
