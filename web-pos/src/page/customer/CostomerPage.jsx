@@ -116,7 +116,7 @@ function CustomerPage() {
                 address: values.address
             };
 
-            const method = state.selectedCustomer ? 'put' : 'post';
+            const method = state.selectedCustomer ? 'post' : 'post';
             const endpoint = state.selectedCustomer ? 'customer/update' : 'customer/create';
             const res = await request(endpoint, method, customerData);
             

@@ -243,7 +243,8 @@ function GeneralSettingPage() {
                                                 { label: 'SEK (kr)', value: 'SEK' },
                                                 { label: 'NZD (NZ$)', value: 'NZD' },
                                                 { label: 'SGD (S$)', value: 'SGD' },
-                                                { label: 'HKD (HK$)', value: 'HKD' }
+                                                { label: 'HKD (HK$)', value: 'HKD' },
+                                                { label: 'KHR (៛)', value: 'KHR' },
                                             ]}
                                             onChange={(value) => {
                                                 const currentStoreValues = form.getFieldValue('store');
