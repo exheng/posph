@@ -259,7 +259,7 @@ function ProductPage() {
             onOk: async () => {
                 try {
                     setState(prev => ({ ...prev, loading: true }));
-                    const res = await request("product", "delete", { id: item.id });
+                    const res = await request(`product/remove?id=${item.id}`, "delete");
                     if (res && !res.error) {
                         message.success("Product deleted successfully!");
                         getProducts();

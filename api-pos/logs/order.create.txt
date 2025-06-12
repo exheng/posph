@@ -1,2 +1,6 @@
 Error: Unknown column 'order_number' in 'field list'
 Error: Unknown column 'currency' in 'field list'
+TypeError: totalDiscount.toFixed is not a function
+TypeError: totalDiscount.toFixed is not a function
+TypeError: exchange_rate_to_usd.toFixed is not a function
+TypeError: exchange_rate_to_usd.toFixed is not a function

@@ -54,6 +54,7 @@ function ReceiptPage() {
             case 'NZD': return 'NZ$';
             case 'SGD': return 'S$';
             case 'HKD': return 'HK$';
+            case 'KHR': return '៛'; // Khmer Riel
             default: return '$'; // Default to USD symbol
         }
     };
@@ -247,7 +248,7 @@ function ReceiptPage() {
                     <div>Subtotal: ${getCurrencySymbol(orderData.currency)}${formatCurrency(Number(orderData.total_amount))}</div>
                     <div>Payment: ${orderData.payment_method?.toUpperCase()}</div>
                     <div>Amount Paid: ${getCurrencySymbol(orderData.currency)}${formatCurrency(Number(orderData.payment_amount))}</div>
-                    <div>Change: ${getCurrencySymbol(orderData.currency)}${formatCurrency(Number(orderData.change_amount || 0))}</div>
+                    <div>Discount: ${getCurrencySymbol(orderData.currency)}${formatCurrency(Number(orderData.discount || 0))}</div>
                 </div>
                 <div class="divider"></div>
                 <div class="center contact-info">
@@ -411,9 +412,9 @@ function ReceiptPage() {
                             </Text>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <Text>Change:</Text>
+                            <Text>Discount:</Text>
                             <Text strong>
-                                {getCurrencySymbol(orderData.currency)}{formatCurrency(Number(orderData.change_amount || 0))}
+                                {getCurrencySymbol(orderData.currency)}{formatCurrency(Number(orderData.discount || 0))}
                             </Text>
                         </div>
                     </div>
@@ -517,9 +518,9 @@ function ReceiptPage() {
                                             </Title>
                                         </div>
                                         <div style={{ textAlign: 'center' }}>
-                                            <Text type="secondary" style={{ display: 'block' }}>Change</Text>
+                                            <Text type="secondary" style={{ display: 'block' }}>Discount</Text>
                                             <Title level={3} style={{ margin: 0, color: '#f5222d' }}>
-                                                {getCurrencySymbol(orderData.currency)}{formatCurrency(Number(orderData.change_amount || 0))}
+                                                {getCurrencySymbol(orderData.currency)}{formatCurrency(Number(orderData.discount || 0))}
                                             </Title>
                                         </div>
                                     </div>

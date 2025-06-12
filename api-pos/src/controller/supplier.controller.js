@@ -57,14 +57,20 @@ exports.update = async (req,res) => {
 
 exports.remove = async (req,res) => {
     try{
-        
-        var [data] = await db.query("DELETE FROM supplier WHERE id = :id", {
-            ...req.body,
-        });
+        const { id } = req.body;
+        // Check for related purchase orders
+        const [purchaseOrders] = await db.query("SELECT COUNT(*) as count FROM purchase_order WHERE supplier_id = :id", { id });
+        if (purchaseOrders[0].count > 0) {
+            return res.status(400).json({
+                error: true,
+                message: "Cannot delete this supplier because it is referenced in purchase orders."
+            });
+        }
+        var [data] = await db.query("DELETE FROM supplier WHERE id = :id", { id });
         res.json({
-        data: data, 
-        message : "Data Delete Success!"
-    }); 
+            data: data, 
+            message : "Data Delete Success!"
+        });
     }catch(error){
         await logError("supplier.remove", error);
         res.status(500).json({ error: "Failed to remove supplier", details: error.message });

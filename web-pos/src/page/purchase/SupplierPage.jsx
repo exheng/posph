@@ -76,7 +76,7 @@ function SupplierPage() {
           ...p,
           loading : true,
           }));   
-          const res   = await request("supplier", "delete", {id:items.id});
+          const res   = await request("supplier/remove", "delete", {id:items.id});
             if (res && !res.error){
               const newList = state.list.filter((item) => item.id !== items.id);
               setState((p) =>({
@@ -85,6 +85,9 @@ function SupplierPage() {
               loading : false,
               }));
               message.success(res.message);
+            } else {
+              setState((p) => ({ ...p, loading: false }));
+              message.error(res.message || "Cannot delete this supplier because it is referenced in purchase .");
             }
           },
         });

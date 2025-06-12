@@ -187,6 +187,7 @@ function PurchaseOrderReportPage() {
             case 'NZD': return 'NZ$';
             case 'SGD': return 'S$';
             case 'HKD': return 'HK$';
+            case 'KHR': return '៛'; // Khmer Riel
             default: return '$';
         }
     };

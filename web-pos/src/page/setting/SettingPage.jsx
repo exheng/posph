@@ -223,6 +223,7 @@ function SettingPage() {
                                                 { label: 'NZD (NZ$)', value: 'NZD' },
                                                 { label: 'SGD (S$)', value: 'SGD' },
                                                 { label: 'HKD (HK$)', value: 'HKD' },
+                                                { label: 'KHR (៛)', value: 'KHR' },
                                             ]}
                                         />
                                     </Form.Item>
