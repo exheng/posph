@@ -1,0 +1,4 @@
+Error: Cannot delete or update a parent row: a foreign key constraint fails (`pos`.`purchase_order_item`, CONSTRAINT `purchase_order_item_ibfk_2` FOREIGN KEY (`product_id`) REFERENCES `product` (`id`))
+Error: Cannot delete or update a parent row: a foreign key constraint fails (`pos`.`purchase_order_item`, CONSTRAINT `purchase_order_item_ibfk_2` FOREIGN KEY (`product_id`) REFERENCES `product` (`id`))
+Error: Cannot delete or update a parent row: a foreign key constraint fails (`pos`.`purchase_order_item`, CONSTRAINT `purchase_order_item_ibfk_2` FOREIGN KEY (`product_id`) REFERENCES `product` (`id`))
+Error: Cannot delete or update a parent row: a foreign key constraint fails (`pos`.`purchase_order_item`, CONSTRAINT `purchase_order_item_ibfk_2` FOREIGN KEY (`product_id`) REFERENCES `product` (`id`))

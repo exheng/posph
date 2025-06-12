@@ -45,7 +45,7 @@ exports.update = async (req, res) => {
 
 exports.remove = async (req, res) => {
     try {
-        const { id } = req.body;
+        const { id } = req.query;
         const [result] = await db.query("DELETE FROM customer WHERE id = ?", [id]);
         res.json({
             message: "Customer deleted successfully",

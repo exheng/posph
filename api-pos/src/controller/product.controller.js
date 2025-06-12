@@ -111,9 +111,16 @@ exports.update = async (req, res) => {
 
 exports.remove = async (req, res) => {
     try {
-        const [data] = await db.query("DELETE FROM product WHERE id = :id", {
-            id: req.body.id
-        });
+        const id = req.query.id;
+        // Check for related order_items
+        const [orderItems] = await db.query("SELECT COUNT(*) as count FROM order_items WHERE product_id = :id", { id });
+        if (orderItems[0].count > 0) {
+            return res.status(400).json({
+                error: true,
+                message: "Cannot delete this product because it is referenced in order items."
+            });
+        }
+        const [data] = await db.query("DELETE FROM product WHERE id = :id", { id });
         res.json({
             data: data,
             message: "Product deleted successfully!"

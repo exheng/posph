@@ -1,0 +1,2 @@
+Error: Cannot delete or update a parent row: a foreign key constraint fails (`pos`.`purchase_order`, CONSTRAINT `purchase_order_ibfk_1` FOREIGN KEY (`supplier_id`) REFERENCES `supplier` (`id`))
+Error: Cannot delete or update a parent row: a foreign key constraint fails (`pos`.`purchase_order`, CONSTRAINT `purchase_order_ibfk_1` FOREIGN KEY (`supplier_id`) REFERENCES `supplier` (`id`))

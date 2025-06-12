@@ -6,6 +6,6 @@ const { validate_token } = require("../middleware/validate_token.js");
 router.get("/", validate_token(), roleController.getList);
 router.post("/create", validate_token(), roleController.create);
 router.post("/update", validate_token(), roleController.update);
-router.post("/remove", validate_token(), roleController.remove);
+router.delete("/remove", validate_token(), roleController.remove);
 
 module.exports = router;

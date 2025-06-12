@@ -141,7 +141,7 @@ function CustomerPage() {
             content: "Are you sure you want to delete this customer?",
             onOk: async () => {
                 try {
-                    const res = await request("customer", "delete", { id: customer.id });
+                    const res = await request(`customer/remove?id=${customer.id}`, "delete");
                     if (res && !res.error) {
                         message.success(res.message || "Customer deleted successfully!");
                         getCustomers();
@@ -155,6 +155,7 @@ function CustomerPage() {
             }
         });
     };
+    
 
     const columns = [
         {
@@ -225,8 +226,9 @@ function CustomerPage() {
                         <Button 
                             type="text" 
                             danger 
-                            icon={<MdDelete />} 
+                            icon={<MdDelete/>} 
                             onClick={() => handleDelete(record)}
+                            disabled={record.isProtected}
                         />
                     </Tooltip>
                 </Space>
