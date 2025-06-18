@@ -18,7 +18,8 @@ import {
     Tooltip,
     Steps,
     Badge,
-    Tag
+    Tag,
+    Modal
 } from 'antd';
 import { 
     DollarOutlined, 
@@ -35,6 +36,7 @@ import { request } from '../../util/helper';
 import MainPage from '../../component/layout/Mainpage';
 import { configStore } from '../../store/configStore';
 import { MdDelete, MdReceipt, MdPrint, MdArrowBack } from "react-icons/md";
+import khqr from '../../assets/khqr.jpg'
 
 const { Title, Text } = Typography;
 
@@ -54,6 +56,7 @@ function PaymentPage() {
         discountPercent: 0
     });
     const [currentStep, setCurrentStep] = useState(0);
+    const [qrModalVisible, setQrModalVisible] = useState(false);
 
     // Get cart data from navigation state
     const { cart = [], total = 0, subtotal = 0, discount = 0, customer: navigatedCustomer } = location.state || {};
@@ -268,6 +271,15 @@ function PaymentPage() {
         }
     ];
 
+    const handlePayNow = () => {
+        setQrModalVisible(true);
+    };
+
+    const handleModalPayment = async () => {
+        setQrModalVisible(false);
+        await handlePayment();
+    };
+
     if (!cart || cart.length === 0) {
         return null;
     }
@@ -471,8 +483,8 @@ function PaymentPage() {
                                         >
                                             <Space direction="vertical" align="center" style={{ width: '100%' }}>
                                                 <BankOutlined style={{ fontSize: '24px', color: '#722ed1' }} />
-                                                <Text strong>Bank Transfer</Text>
-                                                <Text type="secondary" style={{ fontSize: '12px' }}>Bank transfer</Text>
+                                                <Text strong>QR Code</Text>
+                                                <Text type="secondary" style={{ fontSize: '12px' }}>Pay with QR code</Text>
                                             </Space>
                                         </Card>
                                     </Col>
@@ -480,19 +492,35 @@ function PaymentPage() {
                             </Form.Item>
 
                             <Form.Item>
-                                <Button
-                                    type="primary"
-                                    htmlType="submit"
-                                    block
-                                    size="large"
-                                    style={{
-                                        background: 'linear-gradient(135deg, #52c41a 0%, #389e0d 100%)',
-                                        border: 'none',
-                                        boxShadow: '0 2px 8px rgba(82, 196, 26, 0.2)'
-                                    }}
-                                >
-                                    Complete Payment
-                                </Button>
+                                {paymentInfo.paymentMethod === 'bank' ? (
+                                    <Button
+                                        type="primary"
+                                        block
+                                        size="large"
+                                        style={{
+                                            background: 'linear-gradient(135deg, #52c41a 0%, #389e0d 100%)',
+                                            border: 'none',
+                                            boxShadow: '0 2px 8px rgba(82, 196, 26, 0.2)'
+                                        }}
+                                        onClick={handlePayNow}
+                                    >
+                                        Pay Now
+                                    </Button>
+                                ) : (
+                                    <Button
+                                        type="primary"
+                                        htmlType="submit"
+                                        block
+                                        size="large"
+                                        style={{
+                                            background: 'linear-gradient(135deg, #52c41a 0%, #389e0d 100%)',
+                                            border: 'none',
+                                            boxShadow: '0 2px 8px rgba(82, 196, 26, 0.2)'
+                                        }}
+                                    >
+                                        Complete Payment
+                                    </Button>
+                                )}
                             </Form.Item>
                         </Form>
                     </Card>
@@ -551,6 +579,25 @@ function PaymentPage() {
                     </Card>                  
                 </Col>
             </Row>
+            <Modal
+                open={qrModalVisible}
+                onCancel={() => setQrModalVisible(false)}
+                footer={null}
+                centered
+            >
+                <div style={{ textAlign: 'center' }}>
+                    <img src={khqr} alt="KHQR Code" style={{ maxWidth: 260, width: '100%', borderRadius: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }} />
+                    <div style={{ marginTop: 12, fontWeight: 500, fontSize: 16 }}>Scan to pay with KHQR</div>
+                    <Button
+                        type="primary"
+                        size="large"
+                        style={{ marginTop: 24, width: 180 }}
+                        onClick={handleModalPayment}
+                    >
+                        Complete Payment
+                    </Button>
+                </div>
+            </Modal>
         </MainPage>
     );
 }
