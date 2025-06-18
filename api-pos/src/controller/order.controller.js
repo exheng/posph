@@ -1,6 +1,12 @@
 const { db, logError } = require("../util/helper");
 const { sendTelegramMessage } = require("../util/telegram");
 const dayjs = require('dayjs');
+const PDFDocument = require('pdfkit');
+const fs = require('fs');
+const path = require('path');
+const FormData = require('form-data');
+const axios = require('axios');
+const config = require('../util/config');
 
 exports.create = async (req, res) => {
     try {
@@ -131,6 +137,15 @@ Thank you for your business! 🎉
                     );
                 }
             }
+
+            // Generate PDF receipt and send to Telegram
+            const receiptDir = path.join(__dirname, '../../receipts');
+            if (!fs.existsSync(receiptDir)) fs.mkdirSync(receiptDir);
+            const receiptPath = path.join(receiptDir, `receipt_${orderNumber}.pdf`);
+            await generateReceiptPDF(order[0], orderItems, receiptPath);
+            const botToken = config.config.telegram.bot_token;
+            const chatId = config.config.telegram.chat_id;
+            await sendPDFToTelegram(receiptPath, chatId, botToken);
 
             res.json({
                 message: "Order created successfully",
@@ -474,4 +489,108 @@ const scheduleReports = () => {
 };
 
 // Start scheduling reports when the server starts
-scheduleReports(); 
+scheduleReports();
+
+async function generateReceiptPDF(order, orderItems, filePath) {
+    return new Promise((resolve, reject) => {
+        const doc = new PDFDocument({ margin: 32, size: 'A5' });
+        const stream = fs.createWriteStream(filePath);
+        doc.pipe(stream);
+
+        // Store Logo and Name
+        const logoPath = path.join(__dirname, '../../pos_img/Shop-logo.png');
+        if (fs.existsSync(logoPath)) {
+            doc.image(logoPath, doc.page.width / 2 - 20, doc.y, { width: 40 });
+        }
+        doc.moveDown(0.5);
+        doc.fontSize(16).font('Helvetica-Bold').text('Phone Shop', { align: 'center' });
+        doc.fontSize(10).font('Helvetica').text('Your Trusted Store', { align: 'center' });
+        doc.moveDown(1);
+
+        // Receipt Info
+        doc.fontSize(11).font('Helvetica-Bold');
+        doc.text(`Receipt No: `, { continued: true }).font('Helvetica').text(order.order_number);
+        doc.font('Helvetica-Bold').text(`Date: `, { continued: true }).font('Helvetica').text(new Date().toLocaleString());
+        doc.font('Helvetica-Bold').text(`Customer: `, { continued: true }).font('Helvetica').text(order.customer_name || 'Walk-in Customer');
+        doc.moveDown(0.5);
+
+        doc.moveTo(32, doc.y).lineTo(doc.page.width - 32, doc.y).stroke();
+
+        // Table Header
+        const startY = doc.y + 8;
+        doc.fontSize(11).font('Helvetica-Bold');
+        doc.text('Item', 40, startY);
+        doc.text('Qty', 170, startY, { width: 30, align: 'right' });
+        doc.text('Price', 220, startY, { width: 60, align: 'right' });
+        doc.text('Total', 300, startY, { width: 60, align: 'right' });
+        doc.moveTo(32, startY + 15).lineTo(doc.page.width - 32, startY + 15).stroke();
+
+        let y = startY + 20;
+        doc.fontSize(10).font('Helvetica');
+
+        orderItems.forEach((item) => {
+            doc.text(item.product_name, 40, y, { width: 120 });
+            doc.text(String(item.quantity), 170, y, { width: 30, align: 'right' });
+            doc.text(`${order.currency} ${Number(item.price).toFixed(2)}`, 220, y, { width: 60, align: 'right' });
+            doc.text(`${order.currency} ${(Number(item.price) * Number(item.quantity)).toFixed(2)}`, 300, y, { width: 60, align: 'right' });
+            y += 15;
+            // Barcode under product name
+            if (item.barcode) {
+                doc.fontSize(8).fillColor('gray').text(item.barcode, 45, y);
+                doc.fontSize(10).fillColor('black');
+                y += 12;
+            }
+        });
+
+        y += 5;
+        doc.moveTo(32, y).lineTo(doc.page.width - 32, y).stroke();
+
+        // Totals Section
+        y += 10;
+        doc.fontSize(10).font('Helvetica');
+        const labelX = 40, valueX = 300;
+        doc.text('Subtotal:', labelX, y);
+        doc.text(`${order.currency} ${Number(order.total_amount).toFixed(2)}`, valueX, y, { align: 'right' });
+        y += 15;
+        doc.text('Payment:', labelX, y);
+        doc.text(`${order.payment_method ? order.payment_method.toUpperCase() : ''}`, valueX, y, { align: 'right' });
+        y += 15;
+        doc.text('Amount Paid:', labelX, y);
+        doc.text(`${order.currency} ${Number(order.payment_amount).toFixed(2)}`, valueX, y, { align: 'right' });
+        y += 15;
+        doc.text('Discount:', labelX, y);
+        doc.text(`${order.currency} ${Number(order.discount || 0).toFixed(2)}`, valueX, y, { align: 'right' });
+
+        y += 10;
+        doc.moveTo(32, y).lineTo(doc.page.width - 32, y).stroke();
+
+        // Thank you message
+        y += 15;
+        doc.fontSize(11).font('Helvetica-Bold').text('Thank you for your purchase!', { align: 'center' });
+        doc.fontSize(10).font('Helvetica').text('Please come again.', { align: 'center' });
+
+        // Contact Info
+        y += 30;
+        doc.fontSize(10).font('Helvetica');
+        doc.text('Store Contact: 0617342327', labelX, y);
+        y += 13;
+        doc.text('Email: contact@phoneshop.com', labelX, y);
+        y += 13;
+        doc.text('Address: Cambodia', labelX, y);
+
+        doc.end();
+        stream.on('finish', resolve);
+        stream.on('error', reject);
+    });
+}
+
+async function sendPDFToTelegram(filePath, chatId, botToken) {
+    const url = `https://api.telegram.org/bot${botToken}/sendDocument`;
+    const formData = new FormData();
+    formData.append('chat_id', chatId);
+    formData.append('document', fs.createReadStream(filePath));
+
+    await axios.post(url, formData, {
+        headers: formData.getHeaders()
+    });
+} 
