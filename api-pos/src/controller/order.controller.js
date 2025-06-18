@@ -113,6 +113,25 @@ Thank you for your business! 🎉
 
             await sendTelegramMessage(message);
 
+            // Low stock alert after order completion
+            const lowStockThreshold = 10; // You can adjust this value
+            for (const item of items) {
+                // Get the updated product info
+                const [productRows] = await db.query(
+                    "SELECT name, barcode, qty FROM product WHERE id = ?",
+                    [item.product_id]
+                );
+                const product = productRows[0];
+                if (product && product.qty <= lowStockThreshold) {
+                    await sendTelegramMessage(
+                        `⚠️ <b>Low Stock Alert</b>\n` +
+                        `Product: <b>${product.name}</b>\n` +
+                        `Barcode: <b>${product.barcode}</b>\n` +
+                        `Current Stock: <b>${product.qty}</b>`
+                    );
+                }
+            }
+
             res.json({
                 message: "Order created successfully",
                 data: {
