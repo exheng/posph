@@ -1,4 +1,5 @@
 const {db,isArray,isEmpty, logError} = require("../util/helper")
+const { sendTelegramMessage } = require("../util/telegram");
 
 
 exports.getList = async (req,res) => {
@@ -160,5 +161,61 @@ isExistBarcode = async (barcode, currentId = null) => {
     } catch (error) {
         logError("product.isExistBarcode", error);
         return false;
+    }
+}; 
+
+exports.alertAdmin = async (req, res) => {
+    try {
+        const { product_id, product_name, current_stock, threshold, category, brand, alerted_by } = req.body;
+        
+        // Create detailed alert message
+        const alertMessage = `
+🚨 <b>LOW STOCK ALERT FROM CASHIER</b>
+
+<b>Product Details:</b>
+Name: <b>${product_name}</b>
+Category: ${category || 'N/A'}
+Brand: ${brand || 'N/A'}
+Current Stock: <b>${current_stock}</b>
+Threshold: <b>${threshold}</b>
+
+<b>Alert Information:</b>
+Alerted by: <b>${alerted_by}</b>
+Time: ${new Date().toLocaleString()}
+
+<b>Action Required:</b>
+Please create a purchase order to restock this product.
+
+<b>Recommended Quantity:</b>
+${threshold - current_stock} units needed to reach threshold
+        `;
+
+        // Send Telegram notification
+        await sendTelegramMessage(alertMessage);
+
+        // Log the alert in database (optional)
+        const logSql = `
+            INSERT INTO product_alerts (product_id, product_name, current_stock, threshold, alerted_by, alert_type, created_at) 
+            VALUES (?, ?, ?, ?, ?, 'low_stock_cashier_alert', NOW())
+        `;
+        
+        try {
+            await db.query(logSql, [product_id, product_name, current_stock, threshold, alerted_by]);
+        } catch (logError) {
+            // Don't fail the request if logging fails
+            console.error("Failed to log alert:", logError);
+        }
+
+        res.json({
+            message: "Admin has been alerted successfully!",
+            success: true
+        });
+
+    } catch (error) {
+        await logError("product.alertAdmin", error);
+        res.status(500).json({ 
+            error: "Failed to alert admin", 
+            details: error.message 
+        });
     }
 }; 

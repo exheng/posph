@@ -9,5 +9,6 @@ router.post("/create", validate_token(), uploadFile.single('upload_image'), prod
 router.put("/update", validate_token(), uploadFile.single('upload_image'), productController.update);
 router.delete("/remove", validate_token(), productController.remove);
 router.post("/new_barcode", validate_token(), productController.newBarcode);
+router.post("/alert-admin", validate_token(), productController.alertAdmin);
 
 module.exports = router;

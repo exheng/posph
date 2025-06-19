@@ -6,7 +6,8 @@ const fs = require("fs");
 // Configure multer for logo upload
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        const uploadDir = 'pos_img/';
+        // Save to XAMPP htdocs/pos_img
+        const uploadDir = 'C:/xampp/htdocs/pos_img/';
         if (!fs.existsSync(uploadDir)) {
             fs.mkdirSync(uploadDir, { recursive: true });
         }

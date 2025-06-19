@@ -26,6 +26,7 @@ import { request } from '../../util/helper';
 import MainPage from '../../component/layout/Mainpage';
 import { useNavigate } from 'react-router-dom';
 import { notificationStore } from '../../store/notification.store';
+import { getProfile } from '../../store/profile.store';
 
 const { Title, Text } = Typography;
 
@@ -43,6 +44,8 @@ function StockAlertPage() {
         processing: false, // Add processing state for the update operation
     });
     const navigate = useNavigate();
+    const profile = getProfile();
+    const userRole = profile?.role_name?.toLowerCase();
 
     // Keep track of previously notified products
     const notifiedProducts = useRef(new Set());
@@ -213,6 +216,34 @@ function StockAlertPage() {
         }
     };
 
+    const alertAdmin = async (product) => {
+        try {
+            setState(prev => ({ ...prev, processing: true }));
+            
+            // Send alert to admin via API
+            const res = await request("product/alert-admin", "post", {
+                product_id: product.id,
+                product_name: product.name,
+                current_stock: product.qty,
+                threshold: state.lowStockThreshold,
+                category: product.category_name,
+                brand: product.brand,
+                alerted_by: profile?.name || 'Cashier'
+            });
+            
+            if (res && !res.error) {
+                message.success("Admin has been alerted about low stock!");
+            } else {
+                message.error("Failed to alert admin. Please try again.");
+            }
+        } catch (error) {
+            message.error("Failed to alert admin. Please try again.");
+            console.error("Error:", error);
+        } finally {
+            setState(prev => ({ ...prev, processing: false }));
+        }
+    };
+
     const columns = [
         {
             title: 'Product Name',
@@ -265,34 +296,52 @@ function StockAlertPage() {
         {
             title: 'Actions',
             key: 'actions',
-            render: (_, record) => (
-                <Button 
-                    type="primary"
-                    icon={<MdShoppingCart />}
-                    onClick={() => {
-                        const quantityNeeded = state.lowStockThreshold - record.qty;
-                        if (quantityNeeded > 0) {
-                            navigate('/purchase', { 
-                                state: { 
-                                    autoCreate: true,
-                                    product: {
-                                        id: record.id,
-                                        name: record.name,
-                                        quantity: quantityNeeded,
-                                        price: record.price || 0,
-                                        current_stock: record.qty,
-                                        threshold: state.lowStockThreshold
-                                    }
+            render: (_, record) => {
+                // Show different buttons based on user role
+                if (userRole === 'cashier') {
+                    return (
+                        <Button 
+                            type="primary"
+                            danger
+                            icon={<MdNotifications />}
+                            loading={state.processing}
+                            onClick={() => alertAdmin(record)}
+                        >
+                            Alert Admin
+                        </Button>
+                    );
+                } else {
+                    // For admin and manager roles, show create purchase order button
+                    return (
+                        <Button 
+                            type="primary"
+                            icon={<MdShoppingCart />}
+                            onClick={() => {
+                                const quantityNeeded = state.lowStockThreshold - record.qty;
+                                if (quantityNeeded > 0) {
+                                    navigate('/purchase', { 
+                                        state: { 
+                                            autoCreate: true,
+                                            product: {
+                                                id: record.id,
+                                                name: record.name,
+                                                quantity: quantityNeeded,
+                                                price: record.price || 0,
+                                                current_stock: record.qty,
+                                                threshold: state.lowStockThreshold
+                                            }
+                                        }
+                                    });
+                                } else {
+                                    message.info("No purchase order needed. Current stock is above threshold.");
                                 }
-                            });
-                        } else {
-                            message.info("No purchase order needed. Current stock is above threshold.");
-                        }
-                    }}
-                >
-                    Create Purchase Order
-                </Button>
-            )
+                            }}
+                        >
+                            Create Purchase Order
+                        </Button>
+                    );
+                }
+            }
         }
     ];
 

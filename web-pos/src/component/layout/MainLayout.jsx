@@ -27,6 +27,8 @@ import {
   ShoppingOutlined,
   SettingOutlined,
   LogoutOutlined,
+  UploadOutlined,
+  LoadingOutlined,
 } from "@ant-design/icons";
 import { 
   Breadcrumb, 
@@ -42,7 +44,11 @@ import {
   Button,
   Divider,
   Tooltip,
-  Spin
+  Spin,
+  Modal,
+  Form,
+  Upload,
+  Image,
 } from "antd";
 import { Navigate, Outlet, useNavigate } from "react-router-dom";
 import "./MainLayout.css";
@@ -55,6 +61,7 @@ import { notificationStore } from "../../store/notification.store";
 import NotificationPanel from "./NotificationPanel";
 import MessagePanel from "./MessagePanel";
 import { MdNotifications, MdMessage, MdPerson, MdTrendingUp } from "react-icons/md";
+import { useAuth } from "../../context/AuthContext.jsx";
 
 const { Header, Content, Footer, Sider } = Layout;
 const { Text, Title } = Typography;
@@ -198,13 +205,45 @@ const getMenuItems = (role) => {
   // Filter menu items based on role
   if (role?.toLowerCase() === 'cashier') {
     return allItems.filter(item => 
-      ['pos', 'customer', 'order', 'inventory'].includes(item.key)
+      ['home', 'pos', 'customer', 'order', 'inventory'].includes(item.key)
     ).map(item => {
       if (item.key === 'inventory') {
         return {
           ...item,
           children: item.children?.filter(child => 
             ['product', 'stock-alerts'].includes(child.key)
+          )
+        };
+      }
+      return item;
+    });
+  }
+
+  if (role?.toLowerCase() === 'manager') {
+    return allItems.filter(item => 
+      ['/', 'pos', 'customer', 'order', 'inventory', 'purchase', 'reports', 'setting'].includes(item.key)
+    ).map(item => {
+      if (item.key === 'inventory') {
+        return {
+          ...item,
+          children: item.children?.filter(child => 
+            ['product', 'category', 'stock-alerts'].includes(child.key)
+          )
+        };
+      }
+      if (item.key === 'reports') {
+        return {
+          ...item,
+          children: item.children?.filter(child => 
+            ['performance', 'sales-report', 'inventory-report', 'purchase-order-report', 'performance-report'].includes(child.key)
+          )
+        };
+      }
+      if (item.key === 'setting') {
+        return {
+          ...item,
+          children: item.children?.filter(child => 
+            ['general', 'notification'].includes(child.key)
           )
         };
       }
@@ -226,6 +265,10 @@ const MainLayout = () => {
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
+  const [profileModalVisible, setProfileModalVisible] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [profilePic, setProfilePic] = useState(profile?.profile_pic || null);
+  const { setUser } = useAuth ? useAuth() : { setUser: () => {} };
 
   useEffect(() => {
     const initializeApp = async () => {
@@ -283,7 +326,7 @@ const MainLayout = () => {
       key: "profile",
       label: "View Profile",
       icon: <UserOutlined />,
-      onClick: () => navigate("/profile")
+      onClick: () => setProfileModalVisible(true)
     },
     {
       key: "settings",
@@ -302,6 +345,32 @@ const MainLayout = () => {
       onClick: onLogOut
     },
   ];
+
+  // Handle profile picture upload
+  const handleProfilePicUpload = async ({ file, onSuccess, onError }) => {
+    setUploading(true);
+    const formData = new FormData();
+    formData.append("profile_pic", file);
+    try {
+      const response = await request("auth/upload-profile-pic", "post", formData);
+      if (response && !response.error) {
+        // Fetch latest profile
+        const profileRes = await request("auth/profile", "get");
+        if (profileRes && profileRes.profile) {
+          setProfile(profileRes.profile);
+          setUser && setUser(profileRes.profile);
+          setProfilePic(profileRes.profile.profile_pic);
+        }
+        onSuccess(response, file);
+      } else {
+        onError(new Error(response?.error || "Failed to upload profile picture"));
+      }
+    } catch (error) {
+      onError(error);
+    } finally {
+      setUploading(false);
+    }
+  };
 
   return (
     <Layout style={{ minHeight: "100vh" }}>
@@ -488,7 +557,7 @@ const MainLayout = () => {
               >
                 <Avatar
                   size={40}
-                  src={imguser}
+                  src={profile?.profile_pic ? `http://localhost:8081/pos_img/${profile.profile_pic}` : imguser}
                   style={{
                     cursor: "pointer",
                     border: "2px solid #f0f0f0",
@@ -572,6 +641,40 @@ const MainLayout = () => {
           PhoneShop POS System ©{new Date().getFullYear()} - All rights reserved
         </div>
       </Layout>
+      <Modal
+        title="User Profile"
+        open={profileModalVisible}
+        onCancel={() => setProfileModalVisible(false)}
+        footer={null}
+      >
+        <div style={{ textAlign: "center", marginBottom: 24 }}>
+          <Avatar
+            size={80}
+            src={profilePic ? `http://localhost:8081/pos_img/${profilePic}` : imguser}
+            style={{ marginBottom: 16 }}
+          />
+          <Upload
+            showUploadList={false}
+            customRequest={handleProfilePicUpload}
+            accept="image/*"
+          >
+            <Button icon={uploading ? <LoadingOutlined /> : <UploadOutlined />} loading={uploading} style={{ marginBottom: 16 }}>
+              {uploading ? "Uploading..." : "Upload New Picture"}
+            </Button>
+          </Upload>
+        </div>
+        <Form layout="vertical">
+          <Form.Item label="Name">
+            <Input value={profile?.name} disabled />
+          </Form.Item>
+          <Form.Item label="Username">
+            <Input value={profile?.username} disabled />
+          </Form.Item>
+          <Form.Item label="Role">
+            <Input value={profile?.role_name} disabled />
+          </Form.Item>
+        </Form>
+      </Modal>
     </Layout>
   );
 };

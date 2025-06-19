@@ -2,6 +2,9 @@ const config = require("../util/config");
 const {logError, db} = require("../util/helper")
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 
 exports.getList = async (req, res) => {
     let connection;
@@ -84,6 +87,25 @@ exports.login = async (req,res) => {
                         'view_products',
                         'view_stock_alerts'
                     ];
+                } else if (data[0].role_name.toLowerCase() === 'manager') {
+                    permissions = [
+                        'view_all',
+                        'delete',
+                        'edit',
+                        'manage_customers',
+                        'manage_products',
+                        'manage_categories',
+                        'manage_suppliers',
+                        'manage_purchases',
+                        'view_reports',
+                        'view_dashboard',
+                        'manage_settings',
+                        'view_sales_reports',
+                        'view_inventory_reports',
+                        'view_purchase_reports',
+                        'view_performance',
+                        'view_performance_reports'
+                    ];
                 } else {
                     permissions = [
                         'view_all',
@@ -94,7 +116,16 @@ exports.login = async (req,res) => {
                         'manage_settings',
                         'view_reports',
                         'manage_purchases',
-                        'view_dashboard'
+                        'view_dashboard',
+                        'manage_customers',
+                        'manage_products',
+                        'manage_categories',
+                        'manage_suppliers',
+                        'view_sales_reports',
+                        'view_inventory_reports',
+                        'view_purchase_reports',
+                        'view_performance',
+                        'view_performance_reports'
                     ];
                 }
 
@@ -149,4 +180,58 @@ const getAccessToken = async (paramData) => {
     const access_token = await jwt.sign({ data: paramData }, config.config.token.access_token_key, { expiresIn: "1d" });
     return access_token;
     
+};
+
+// Multer config for profile picture
+const profilePicStorage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        const uploadDir = 'C:/xampp/htdocs/pos_img/';
+        if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir, { recursive: true });
+        }
+        cb(null, uploadDir);
+    },
+    filename: function (req, file, cb) {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, 'profile-' + uniqueSuffix + path.extname(file.originalname));
+    }
+});
+
+const uploadProfilePic = multer({
+    storage: profilePicStorage,
+    fileFilter: function (req, file, cb) {
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+        if (allowedTypes.includes(file.mimetype)) {
+            cb(null, true);
+        } else {
+            cb(new Error('Invalid file type. Only JPEG, PNG and GIF are allowed.'));
+        }
+    },
+    limits: {
+        fileSize: 5 * 1024 * 1024 // 5MB limit
+    }
+}).single('profile_pic');
+
+exports.uploadProfilePic = (req, res) => {
+    uploadProfilePic(req, res, async function(err) {
+        if (err) {
+            return res.status(400).json({ error: err.message });
+        }
+        if (!req.file) {
+            return res.status(400).json({ error: 'No file uploaded' });
+        }
+        try {
+            // Update the user's profile_pic in the database
+            await db.query(
+                `UPDATE user SET profile_pic = :profile_pic WHERE id = :id`,
+                { profile_pic: req.file.filename, id: req.profile.id }
+            );
+            res.json({
+                message: 'Profile picture uploaded successfully',
+                filename: req.file.filename
+            });
+        } catch (error) {
+            logError('auth.uploadProfilePic', error, res);
+        }
+    });
 };
