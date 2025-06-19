@@ -205,13 +205,45 @@ const getMenuItems = (role) => {
   // Filter menu items based on role
   if (role?.toLowerCase() === 'cashier') {
     return allItems.filter(item => 
-      ['pos', 'customer', 'order', 'inventory'].includes(item.key)
+      ['home', 'pos', 'customer', 'order', 'inventory'].includes(item.key)
     ).map(item => {
       if (item.key === 'inventory') {
         return {
           ...item,
           children: item.children?.filter(child => 
             ['product', 'stock-alerts'].includes(child.key)
+          )
+        };
+      }
+      return item;
+    });
+  }
+
+  if (role?.toLowerCase() === 'manager') {
+    return allItems.filter(item => 
+      ['/', 'pos', 'customer', 'order', 'inventory', 'purchase', 'reports', 'setting'].includes(item.key)
+    ).map(item => {
+      if (item.key === 'inventory') {
+        return {
+          ...item,
+          children: item.children?.filter(child => 
+            ['product', 'category', 'stock-alerts'].includes(child.key)
+          )
+        };
+      }
+      if (item.key === 'reports') {
+        return {
+          ...item,
+          children: item.children?.filter(child => 
+            ['performance', 'sales-report', 'inventory-report', 'purchase-order-report', 'performance-report'].includes(child.key)
+          )
+        };
+      }
+      if (item.key === 'setting') {
+        return {
+          ...item,
+          children: item.children?.filter(child => 
+            ['general', 'notification'].includes(child.key)
           )
         };
       }

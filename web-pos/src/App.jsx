@@ -36,6 +36,68 @@ import SettingPage from "./page/setting/SettingPage";
 // import BrandPage from "./page/brand/BrandPage";
 import { getProfile } from './store/profile.store';
 
+// Define role-based access permissions
+const ROLE_PERMISSIONS = {
+  cashier: [
+    '/home',                // Home
+    '/pos',                 // Point of Sale
+    '/pos/payment',         // Payment
+    '/pos/customer-selection', // Customer Selection
+    '/pos/receipt',         // Receipt
+    '/customer',            // Customers
+    '/order',               // Orders
+    '/product',             // Products (view only)
+    '/stock-alerts',        // Stock Alerts
+  ],
+  admin: [
+    '/',                    // Dashboard
+    '/home',                // Home
+    '/employee',            // Employee Management
+    '/customer',            // Customers
+    '/category',            // Categories
+    '/product',             // Products
+    '/stock-alerts',        // Stock Alerts
+    '/purchase',            // Purchase Orders
+    '/user',                // User Management
+    '/role',                // Role Management
+    '/supplier',            // Suppliers
+    '/pos',                 // Point of Sale
+    '/pos/payment',         // Payment
+    '/pos/customer-selection', // Customer Selection
+    '/pos/receipt',         // Receipt
+    '/order',               // Orders
+    '/sales-report',        // Sales Reports
+    '/inventory-report',    // Inventory Reports
+    '/performance',         // Performance
+    '/performance-report',  // Performance Report
+    '/purchase-order-report', // Purchase Order Reports
+    '/general',             // General Settings
+    '/notification',        // Notifications
+  ],
+  manager: [
+    '/',                    // Dashboard
+    '/home',                // Home
+    '/customer',            // Customers
+    '/category',            // Categories
+    '/product',             // Products
+    '/stock-alerts',        // Stock Alerts
+    '/purchase',            // Purchase Orders
+    '/supplier',            // Suppliers
+    '/pos',                 // Point of Sale
+    '/pos/payment',         // Payment
+    '/pos/customer-selection', // Customer Selection
+    '/pos/receipt',         // Receipt
+    '/order',               // Orders
+    '/sales-report',        // Sales Reports
+    '/inventory-report',    // Inventory Reports
+    '/performance',         // Performance
+    '/performance-report',  // Performance Report
+    '/purchase-order-report', // Purchase Order Reports
+    '/general',             // General Settings
+    '/notification',        // Notifications
+  ]
+};
+
 // Route guard component
 const RouteGuard = ({ children, allowedRoles = [] }) => {
   const profile = getProfile();
@@ -46,14 +108,17 @@ const RouteGuard = ({ children, allowedRoles = [] }) => {
     return <Navigate to="/login" replace />;
   }
 
-  // If role is cashier and trying to access dashboard, redirect to POS
-  if (profile && profile.role_name?.toLowerCase() === 'cashier' && location === '/') {
-    return <Navigate to="/pos" replace />;
-  }
+  // If user has a profile, check role-based permissions
+  if (profile) {
+    const userRole = profile.role_name?.toLowerCase();
+    const allowedPaths = ROLE_PERMISSIONS[userRole] || [];
 
-  // If specific roles are required and user's role is not allowed
-  if (profile && allowedRoles.length > 0 && !allowedRoles.includes(profile.role_name?.toLowerCase())) {
-    return <Navigate to="/pos" replace />;
+    // Check if the current path is allowed for the user's role
+    if (!allowedPaths.includes(location)) {
+      // Redirect to first allowed path or POS for cashiers
+      const redirectPath = userRole === 'cashier' ? '/pos' : '/';
+      return <Navigate to={redirectPath} replace />;
+    }
   }
 
   return children;
@@ -69,30 +134,30 @@ function App() {
         <Route path="*" element={<h1>Route Not Found!!</h1>}/>
       </Route>
       <Route element={<MainLayout/>} >
-        <Route path="/" element={<DashboardPage/>}/>
-        <Route path="/home" element={<HomePage/>}/>
-        <Route path="/employee" element={<EmployeePage/>}/>
-        <Route path="/customer" element={<CostomerPage/>}/>
-        <Route path="/category" element={<CategoryPage/>}/>
-        <Route path="/product" element={<ProductPage/>}/>
-        <Route path="/stock-alerts" element={<StockAlertPage/>}/>
-        <Route path="/purchase" element={<PurchaseOrderPage/>}/>
-        <Route path="/user" element={<UserPage/>}/>
-        <Route path="/role" element={<RolePage/>}/>
-        <Route path="/supplier" element={<SupplierPage/>}/>
-        <Route path="/pos" element={<PosPage/>}/>
-        <Route path="/Product/Category1" element={<PurchasePage/>}/>
-        <Route path="/pos/payment" element={<PaymentPage/>} />
-        <Route path="/pos/customer-selection" element={<CustomerSelectionPage />} />
-        <Route path="/pos/receipt" element={<ReceiptPage />} />
-        <Route path="/order" element={<OrderListPage />} />
-        <Route path="/sales-report" element={<SalesReportPage />} />
-        <Route path="/inventory-report" element={<InventoryReportPage />} />
-        <Route path="/performance" element={<PerformancePage/>}/>
-        <Route path="/performance-report" element={<PerformanceReportPage/>}/>
-        <Route path="/purchase-order-report" element={<PurchaseOrderReportPage/>}/>
-        <Route path="/general" element={<GeneralSettingPage/>}/>
-        <Route path="/notification" element={<SettingPage/>}/>
+        <Route path="/" element={<RouteGuard><DashboardPage/></RouteGuard>}/>
+        <Route path="/home" element={<RouteGuard><HomePage/></RouteGuard>}/>
+        <Route path="/employee" element={<RouteGuard allowedRoles={['admin']}><EmployeePage/></RouteGuard>}/>
+        <Route path="/customer" element={<RouteGuard><CostomerPage/></RouteGuard>}/>
+        <Route path="/category" element={<RouteGuard allowedRoles={['admin', 'manager']}><CategoryPage/></RouteGuard>}/>
+        <Route path="/product" element={<RouteGuard><ProductPage/></RouteGuard>}/>
+        <Route path="/stock-alerts" element={<RouteGuard><StockAlertPage/></RouteGuard>}/>
+        <Route path="/purchase" element={<RouteGuard allowedRoles={['admin', 'manager']}><PurchaseOrderPage/></RouteGuard>}/>
+        <Route path="/user" element={<RouteGuard allowedRoles={['admin']}><UserPage/></RouteGuard>}/>
+        <Route path="/role" element={<RouteGuard allowedRoles={['admin']}><RolePage/></RouteGuard>}/>
+        <Route path="/supplier" element={<RouteGuard allowedRoles={['admin', 'manager']}><SupplierPage/></RouteGuard>}/>
+        <Route path="/pos" element={<RouteGuard><PosPage/></RouteGuard>}/>
+        <Route path="/Product/Category1" element={<RouteGuard allowedRoles={['admin', 'manager']}><PurchasePage/></RouteGuard>}/>
+        <Route path="/pos/payment" element={<RouteGuard><PaymentPage/></RouteGuard>} />
+        <Route path="/pos/customer-selection" element={<RouteGuard><CustomerSelectionPage /></RouteGuard>} />
+        <Route path="/pos/receipt" element={<RouteGuard><ReceiptPage /></RouteGuard>} />
+        <Route path="/order" element={<RouteGuard><OrderListPage /></RouteGuard>} />
+        <Route path="/sales-report" element={<RouteGuard><SalesReportPage /></RouteGuard>} />
+        <Route path="/inventory-report" element={<RouteGuard><InventoryReportPage /></RouteGuard>} />
+        <Route path="/performance" element={<RouteGuard><PerformancePage/></RouteGuard>}/>
+        <Route path="/performance-report" element={<RouteGuard><PerformanceReportPage/></RouteGuard>}/>
+        <Route path="/purchase-order-report" element={<RouteGuard allowedRoles={['admin', 'manager']}><PurchaseOrderReportPage/></RouteGuard>}/>
+        <Route path="/general" element={<RouteGuard allowedRoles={['admin', 'manager']}><GeneralSettingPage/></RouteGuard>}/>
+        <Route path="/notification" element={<RouteGuard allowedRoles={['admin', 'manager']}><SettingPage/></RouteGuard>}/>
         <Route path="*" element={<h1>Route Not Found!!</h1>}/>
       </Route>
     </Routes>

@@ -30,6 +30,7 @@ import {
 } from "react-icons/md";
 import MainPage from "../../component/layout/Mainpage";
 import { configStore } from "../../store/configStore";
+import { getProfile } from "../../store/profile.store";
 
 const { Title, Text } = Typography;
 
@@ -44,6 +45,8 @@ const getBase64 = (file) =>
 function ProductPage() {
     const { config } = configStore();
     const [form] = Form.useForm();
+    const profile = getProfile();
+    const userRole = profile?.role_name?.toLowerCase();
     const [state, setState] = useState({
         visibleModal: false,
         Id: null,
@@ -190,6 +193,12 @@ function ProductPage() {
     };
 
     const onNewBtn = async () => {
+        // Only allow admin and manager to add new products
+        if (userRole === 'cashier') {
+            message.warning("Cashiers cannot add new products. Please contact an administrator.");
+            return;
+        }
+
         const res = await request("product/new_barcode", "post");
         if (res && !res.error) {
             form.setFieldValue("barcode", res.barcode);
@@ -212,6 +221,12 @@ function ProductPage() {
     const handleChangeImageOptional= ({ fileList: newFileList }) => setImageOptional(newFileList);
 
     const clickBtnEdit = (item) => {
+        // Only allow admin and manager to edit products
+        if (userRole === 'cashier') {
+            message.warning("Cashiers cannot edit products. Please contact an administrator.");
+            return;
+        }
+
         form.setFieldsValue({
             id: item.id,
             name: item.name,
@@ -239,6 +254,12 @@ function ProductPage() {
     };
 
     const clickBtnDelete = (item) => {
+        // Only allow admin and manager to delete products
+        if (userRole === 'cashier') {
+            message.warning("Cashiers cannot delete products. Please contact an administrator.");
+            return;
+        }
+
         Modal.confirm({
             title: "Delete Product",
             icon: <MdDelete style={{ color: '#ff4d4f' }} />,
@@ -338,7 +359,8 @@ function ProductPage() {
                 </Tag>
             ),
         },
-        {
+        // Only show action column for admin and manager
+        ...(userRole !== 'cashier' ? [{
             title: 'Action',
             key: 'action',
             render: (_, record) => (
@@ -359,7 +381,7 @@ function ProductPage() {
                     </Button>
                 </Space>
             ),
-        },
+        }] : []),
     ];
 
     return (
@@ -368,18 +390,21 @@ function ProductPage() {
                 <Space direction="vertical" size="middle" style={{ width: '100%' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <Title level={4} style={{ margin: 0 }}>Products</Title>
-                        <Button 
-                            type="primary" 
-                            icon={<MdAdd />} 
-                            onClick={onNewBtn}
-                            style={{ 
-                                background: 'linear-gradient(135deg, #1890ff 0%, #096dd9 100%)',
-                                border: 'none',
-                                boxShadow: '0 2px 8px rgba(24, 144, 255, 0.2)'
-                            }}
-                        >
-                            Add New Product
-                        </Button>
+                        {/* Only show Add New Product button for admin and manager */}
+                        {userRole !== 'cashier' && (
+                            <Button 
+                                type="primary" 
+                                icon={<MdAdd />} 
+                                onClick={onNewBtn}
+                                style={{ 
+                                    background: 'linear-gradient(135deg, #1890ff 0%, #096dd9 100%)',
+                                    border: 'none',
+                                    boxShadow: '0 2px 8px rgba(24, 144, 255, 0.2)'
+                                }}
+                            >
+                                Add New Product
+                            </Button>
+                        )}
                     </div>
 
                     <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
@@ -457,7 +482,8 @@ function ProductPage() {
                                     )}
                                 </div>
                             }
-                            actions={[
+                            // Only show actions for admin and manager
+                            actions={userRole !== 'cashier' ? [
                                 <Tooltip title="Edit">
                                     <Button 
                                         type="text" 
@@ -479,7 +505,7 @@ function ProductPage() {
                                         }}
                                     />
                                 </Tooltip>
-                            ]}
+                            ] : []}
                         >
                             <Card.Meta
                                 title={item.name}

@@ -87,6 +87,25 @@ exports.login = async (req,res) => {
                         'view_products',
                         'view_stock_alerts'
                     ];
+                } else if (data[0].role_name.toLowerCase() === 'manager') {
+                    permissions = [
+                        'view_all',
+                        'delete',
+                        'edit',
+                        'manage_customers',
+                        'manage_products',
+                        'manage_categories',
+                        'manage_suppliers',
+                        'manage_purchases',
+                        'view_reports',
+                        'view_dashboard',
+                        'manage_settings',
+                        'view_sales_reports',
+                        'view_inventory_reports',
+                        'view_purchase_reports',
+                        'view_performance',
+                        'view_performance_reports'
+                    ];
                 } else {
                     permissions = [
                         'view_all',
@@ -97,7 +116,16 @@ exports.login = async (req,res) => {
                         'manage_settings',
                         'view_reports',
                         'manage_purchases',
-                        'view_dashboard'
+                        'view_dashboard',
+                        'manage_customers',
+                        'manage_products',
+                        'manage_categories',
+                        'manage_suppliers',
+                        'view_sales_reports',
+                        'view_inventory_reports',
+                        'view_purchase_reports',
+                        'view_performance',
+                        'view_performance_reports'
                     ];
                 }
 
