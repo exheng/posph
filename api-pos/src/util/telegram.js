@@ -104,17 +104,48 @@ const getStockMessage = async () => {
 
         let message = '📦 <b>Current Stock Report</b>\n\n';
         
+        // Count products by status
+        let greenCount = 0, yellowCount = 0, redCount = 0, outOfStockCount = 0;
+        
         products.forEach((product, index) => {
-            const stockStatus = product.qty > 0 ? '✅' : '❌';
-            message += `${stockStatus} <b>${product.name}</b>\n`;
-            message += `   📊 Quantity: ${product.qty}\n`;
-            message += `   💰 Price: $${product.price}\n`;
-            message += `   🏷️ Category: ${product.category_name || 'N/A'}\n`;
-            message += `   🏭 Brand: ${product.brand_name || 'N/A'}\n`;
-            message += `   📋 Barcode: ${product.barcode}\n\n`;
+            let statusEmoji, statusText;
+            
+            if (product.qty === 0) {
+                statusEmoji = '❌';
+                statusText = 'OUT OF STOCK';
+                outOfStockCount++;
+            } else if (product.qty < 10) {
+                statusEmoji = '🔴';
+                statusText = 'LOW STOCK';
+                redCount++;
+            } else if (product.qty <= 15) {
+                statusEmoji = '🟡';
+                statusText = 'MEDIUM STOCK';
+                yellowCount++;
+            } else {
+                statusEmoji = '🟢';
+                statusText = 'GOOD STOCK';
+                greenCount++;
+            }
+            
+            message += `${statusEmoji} <b>${product.name}</b>\n`;
+            message += `   📊 <b>Quantity:</b> <code>${product.qty}</code>\n`;
+            message += `   🏷️ <b>Status:</b> ${statusText}\n`;
+            message += `   💰 <b>Price:</b> $${product.price}\n`;
+            message += `   🏷️ <b>Category:</b> ${product.category_name || 'N/A'}\n`;
+            message += `   🏭 <b>Brand:</b> ${product.brand_name || 'N/A'}\n`;
+            message += `   📋 <b>Barcode:</b> <code>${product.barcode}</code>\n`;
+            message += '\n';
         });
 
-        message += `\n📈 <b>Total Products:</b> ${products.length}`;
+        // Add summary statistics
+        message += `\n📈 <b>Stock Summary:</b>\n`;
+        message += `🟢 <b>Good Stock</b>: ${greenCount} products (&gt;15 units)\n`;
+        message += `🟡 <b>Medium Stock</b>: ${yellowCount} products (10-15 units)\n`;
+        message += `🔴 <b>Low Stock</b>: ${redCount} products (&lt;10 units)\n`;
+        message += `❌ <b>Out of Stock</b>: ${outOfStockCount} products\n`;
+        message += `\n📊 <b>Total Products:</b> ${products.length}`;
+        
         return message;
 
     } catch (error) {

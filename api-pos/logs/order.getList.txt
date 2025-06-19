@@ -22,3 +22,5 @@ Error: Unknown column 'o.currency' in 'field list'
 Error: Unknown column 'o.currency' in 'field list'
 Error
 Error
+Error
+Error
