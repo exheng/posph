@@ -8,5 +8,6 @@ router.post("/register", validate_token(), authController.register);
 router.post("/login", authController.login);
 router.get("/profile", validate_token(), authController.profile);
 router.delete("/:id", validate_token(), authController.remove);
+router.post("/upload-profile-pic", validate_token(), authController.uploadProfilePic);
 
 module.exports = router;

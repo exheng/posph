@@ -23,6 +23,33 @@ const sendTelegramMessage = async (message) => {
     }
 };
 
+const splitMessageSafe = (message, maxLength = 4096) => {
+    const lines = message.split('\n');
+    const chunks = [];
+    let current = '';
+    for (const line of lines) {
+        if ((current + line + '\n').length > maxLength) {
+            chunks.push(current);
+            current = '';
+        }
+        current += line + '\n';
+    }
+    if (current) chunks.push(current);
+    return chunks;
+};
+
+const sendLongTelegramMessage = async (botToken, chatId, message) => {
+    const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
+    const chunks = splitMessageSafe(message);
+    for (const chunk of chunks) {
+        await axios.post(url, {
+            chat_id: chatId,
+            text: chunk,
+            parse_mode: 'HTML'
+        });
+    }
+};
+
 // Handle incoming Telegram updates (webhook)
 const handleTelegramUpdate = async (update) => {
     try {
@@ -55,13 +82,8 @@ const handleTelegramUpdate = async (update) => {
                 response = 'Unknown command. Use /help to see available commands.';
         }
 
-        // Send response back to the user
-        const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
-        await axios.post(url, {
-            chat_id: chatId,
-            text: response,
-            parse_mode: 'HTML'
-        });
+        // Send response back to the user in chunks
+        await sendLongTelegramMessage(botToken, chatId, response);
 
     } catch (error) {
         console.error('Error handling Telegram update:', error);
